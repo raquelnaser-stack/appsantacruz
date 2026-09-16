@@ -85,48 +85,29 @@
               </ul>
 
               <ul class="login" id="stepPass" hidden>
-                <li class="passLayout">
-                  <div class="securityImage">
-                    <img src="/banca/security.svg" width="140" height="105" alt="Imagen de seguridad" />
-                  </div>
-                  <ul>
-                    <li class="labelInput">
-                      <span class="usuario fr">Contraseña:</span>
-                      <span class="userIcon fr"></span>
-                    </li>
-                    <li class="password fl">
-                      <input
-                        type="password"
-                        id="txtPassword"
-                        tabindex="1"
-                        placeholder="Ingrese su contraseña"
-                        autocomplete="off"
-                      />
-                    </li>
-                    <li class="fl">
-                      <input type="button" class="btnVirtualKeyboard" title="Teclado virtual" />
-                    </li>
-                  </ul>
+                <li class="passRow">
+                  <span class="usuario">Contraseña:</span>
+                  <span class="password">
+                    <input type="password" id="txtPassword" autocomplete="off" />
+                  </span>
+                  <input type="button" class="btnVirtualKeyboard" title="Teclado virtual" />
                 </li>
-                <li>
-                  <ul style="height: 40px">
-                    <li style="width: 200px; text-align: right; margin-left: 220px">
-                      <span class="checkBox fl">
-                        <input id="cbShowPassword" type="checkbox" />
-                      </span>
-                    </li>
-                    <li class="genericMsg" style="vertical-align: top">
-                      <div style="vertical-align: top; margin-top: -20px; text-align: left; margin-left: 18px;">
-                        <label for="cbShowPassword">Ver caracteres</label>
-                      </div>
-                    </li>
-                  </ul>
-                </li>
-                <li class="genericMsg clear" style="margin-top: -8px;">
+                <li class="genericMsg passHint">
                   Puede utilizar el teclado virtual para ingresar su contraseña
                 </li>
-                <li class="btn enterRow">
-                  <button type="button" id="Enter_Step2" class="btnGenericGreen">Ingresar</button>
+                <li class="passRef">
+                  Asegúrese que esta es la imagen seleccionada por Ud. Si este es su primer ingreso al sistema
+                  esta imagen es sólo referencial y más adelante podrá configurar su imagen deseada.
+                </li>
+                <li class="securityImage">
+                  <img src="/banca/security.svg" width="80" height="80" alt="" />
+                </li>
+                <li class="forgotPass">
+                  <a href="#">¿Ha olvidado su contraseña?</a>
+                </li>
+                <li class="navRow">
+                  <button type="button" id="btnAnterior" class="btnDark js-live">Anterior</button>
+                  <button type="button" id="btnSiguiente" class="btnDark">Siguiente</button>
                 </li>
               </ul>
             </form>
@@ -199,16 +180,25 @@
 
       const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
       const pass = document.getElementById("txtPassword");
+      const box = document.querySelector(".contentLogin");
       bindReveal(user, document.getElementById("MainContent_ctl01_cbShowCharacters"));
-      bindReveal(pass, document.getElementById("cbShowPassword"));
 
       function goToPassword() {
         document.getElementById("stepUser").hidden = true;
         document.getElementById("stepPass").hidden = false;
+        box?.classList.add("extended");
         if (pass) pass.focus();
       }
 
+      function goToUser() {
+        document.getElementById("stepPass").hidden = true;
+        document.getElementById("stepUser").hidden = false;
+        box?.classList.remove("extended");
+        if (user) user.focus();
+      }
+
       document.getElementById("Enter_Step1")?.addEventListener("click", goToPassword);
+      document.getElementById("btnAnterior")?.addEventListener("click", goToUser);
       user?.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();

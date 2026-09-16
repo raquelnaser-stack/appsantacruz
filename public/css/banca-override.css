@@ -61,9 +61,7 @@
   width: 100%;
 }
 #container .contentLogin #Enter_Step1,
-#container .contentLogin #Enter_Step2,
 #container .login #Enter_Step1.btnGenericGreen,
-#container .login #Enter_Step2.btnGenericGreen,
 #container .login .enterRow .btnGenericGreen {
   float: none !important;
   display: block !important;
@@ -86,26 +84,87 @@
   border: 0 !important;
   box-shadow: none !important;
 }
+#container .contentLogin.extended {
+  min-height: 420px;
+}
 #stepPass.login {
-  position: relative;
-  min-height: 210px;
+  padding-top: 36px;
+  text-align: center;
 }
-#stepPass .passLayout {
-  overflow: visible;
-  min-height: 70px;
+#stepPass .passRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
-#stepPass .securityImage {
-  position: absolute;
-  top: 18px;
-  right: 28px;
-  padding: 3px;
+#stepPass .passRow .usuario {
+  color: #5a5a5a;
+  font-size: 1em;
+}
+#stepPass .passRow .password {
+  width: 280px;
+  height: 28px;
   border: 1px solid #c5c5c5;
   background: #fff;
 }
+#stepPass .passRow .password input {
+  width: 100% !important;
+  height: 26px !important;
+  min-height: 26px;
+  border: 0 !important;
+  font-weight: 400;
+}
+#stepPass .passHint,
+#stepPass .passRef {
+  color: #777;
+  font-size: 0.85em;
+  line-height: 1.4;
+  max-width: 520px;
+  margin: 12px auto 0;
+  text-align: center;
+}
+#stepPass .passRef {
+  margin-top: 10px;
+  color: #5a5a5a;
+}
+#stepPass .securityImage {
+  width: 80px;
+  height: 80px;
+  margin: 22px auto 8px;
+  background: #90a4b7;
+}
 #stepPass .securityImage img {
   display: block;
+  width: 80px;
+  height: 80px;
+}
+#stepPass .forgotPass {
+  margin: 18px 0 28px;
+  text-align: center;
+}
+#stepPass .forgotPass a {
+  color: #0a8d43 !important;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+#stepPass .navRow {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 56px 0 8px;
+}
+#stepPass .btnDark {
   width: 120px;
-  height: 90px;
+  height: 36px;
+  border: 0 !important;
+  border-radius: 18px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none !important;
+  box-shadow: none !important;
 }
 #puntoReclamoBtn {
   position: fixed;
