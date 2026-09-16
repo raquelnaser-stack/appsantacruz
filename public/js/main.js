@@ -45,7 +45,7 @@ if (toggle) {
 }
 
 const modal = document.getElementById("comunicado");
-if (modal && !sessionStorage.getItem("bmsc-demo-comunicado")) {
+if (modal && !document.body.classList.contains("banca-page") && !sessionStorage.getItem("bmsc-demo-comunicado")) {
   modal.hidden = false;
 }
 
@@ -60,6 +60,23 @@ modal?.addEventListener("click", (event) => {
     modal.hidden = true;
     sessionStorage.setItem("bmsc-demo-comunicado", "1");
   }
+});
+
+const live = (el) =>
+  el.classList.contains("js-live") ||
+  el.classList.contains("hero-arrow") ||
+  el.classList.contains("dot") ||
+  el.classList.contains("modal-close") ||
+  el.classList.contains("menu-toggle");
+
+document.addEventListener("click", (event) => {
+  const el = event.target.closest("a, button");
+  if (!el || live(el)) return;
+  event.preventDefault();
+});
+
+document.querySelectorAll("form").forEach((form) => {
+  form.addEventListener("submit", (event) => event.preventDefault());
 });
 
 start();

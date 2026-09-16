@@ -19,6 +19,12 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.segment = req.query.segment || "personas";
   res.locals.year = new Date().getFullYear();
+  res.locals.todayLabel = new Intl.DateTimeFormat("es-BO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date());
   next();
 });
 
@@ -47,6 +53,12 @@ app.post("/contactanos", (req, res) => {
     nombre: (nombre || "").trim(),
     correo: (correo || "").trim(),
     mensaje: (mensaje || "").trim()
+  });
+});
+
+app.get("/banca-por-internet", (req, res) => {
+  res.render("banca", {
+    title: "Banca por Internet"
   });
 });
 

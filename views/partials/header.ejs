@@ -1,5 +1,5 @@
 <header class="bm-header">
-  <a class="header-logo-container" href="/" aria-label="Mercantil Santa Cruz">
+  <a class="header-logo-container" href="#" aria-label="Mercantil Santa Cruz">
     <img class="header-logo" src="<%= ASSETS.headerLogo %>" alt="Mercantil Santa Cruz" width="350" height="100" />
   </a>
   <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
@@ -12,8 +12,8 @@
         <a class="<%= (segment === item.id || currentPath === '/' + item.id) ? 'is-active' : '' %>" href="<%= item.href %>"><%= item.label %></a>
         <% }) %>
       </nav>
-      <a class="btn btn-orange" href="/mis-productos">Mis Productos</a>
-      <a class="btn btn-forest" href="/banca-24-7">Banca por Internet</a>
+      <a class="btn btn-orange" href="#">Mis Productos</a>
+      <a class="btn btn-forest js-live" href="/banca-por-internet">Banca por Internet</a>
     </div>
     <nav class="product-nav" aria-label="Productos">
       <% nav.forEach((item) => { %>
