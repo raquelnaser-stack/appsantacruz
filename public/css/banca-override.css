@@ -1,10 +1,29 @@
 /* Checkbox visible without the original jQuery skin. Captcha stays removed. */
+#container .password,
+#container #MainContent_ctl01_liPassword.password {
+  width: 350px;
+  height: 34px;
+  padding: 0 !important;
+  margin: 0;
+  border: 2px solid #8dc63f !important;
+  border-radius: 2px;
+  background: #fff !important;
+  background-image: none !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
 #container .password input,
 #container #MainContent_ctl01_txtUserNamePassword {
-  border: 2px solid #8dc63f !important;
-  width: 350px;
-  height: 30px;
-  background: #fff !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  height: 30px !important;
+  min-height: 30px;
+  padding: 0 8px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
   color: #000 !important;
   -webkit-text-fill-color: #000 !important;
   font-weight: 700;
