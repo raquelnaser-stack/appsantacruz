@@ -1,0 +1,18 @@
+---
+description: Subir cada cambio a GitHub para que DigitalOcean despliegue
+alwaysApply: true
+---
+
+# GitHub es la fuente de verdad
+
+Este proyecto vive en https://github.com/raquelnaser-stack/appsantacruz (rama `main`). DigitalOcean App Platform despliega desde ahí: https://lobster-app-ewqka.ondigitalocean.app/
+
+Después de terminar un cambio pedido por el usuario:
+
+1. Haz commit en `main` (mensaje corto, en español, explicando el porqué).
+2. Haz `git push origin main` de inmediato. No dejes trabajo solo en local.
+3. No pidas permiso extra para commit/push en este repo: el usuario lo pidió para todos los cambios.
+
+No uses `git config`. Si falta identidad, usa variables de entorno de un solo comando con `raquelnaser-stack` y el correo noreply de GitHub.
+
+No hagas force push a `main`.
