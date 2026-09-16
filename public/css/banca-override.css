@@ -84,18 +84,37 @@
   border: 0 !important;
   box-shadow: none !important;
 }
+#container div.contentLogin.extended,
 #container .contentLogin.extended {
-  min-height: 420px;
+  height: 520px !important;
+  min-height: 520px;
+  overflow: hidden;
+  background-color: #fff;
 }
 #stepPass.login {
-  padding-top: 36px;
+  padding-top: 28px;
   text-align: center;
 }
+#stepPass.login > li.passHint,
+#stepPass.login > li.passRef,
+#stepPass.login > li.securityImage,
+#stepPass.login > li.forgotPass {
+  float: none !important;
+  clear: both;
+  display: block;
+  height: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  background-image: none !important;
+}
 #stepPass .passRow {
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  float: none !important;
+  width: 100% !important;
+  height: auto !important;
 }
 #stepPass .passRow .usuario {
   color: #5a5a5a;
@@ -104,8 +123,8 @@
 #stepPass .passRow .password {
   width: 280px;
   height: 28px;
-  border: 1px solid #c5c5c5;
-  background: #fff;
+  border: 1px solid #c5c5c5 !important;
+  background: #fff !important;
 }
 #stepPass .passRow .password input {
   width: 100% !important;
@@ -116,30 +135,32 @@
 }
 #stepPass .passHint,
 #stepPass .passRef {
-  color: #777;
+  color: #777 !important;
   font-size: 0.85em;
   line-height: 1.4;
   max-width: 520px;
-  margin: 12px auto 0;
+  margin: 10px auto 0 !important;
   text-align: center;
 }
 #stepPass .passRef {
-  margin-top: 10px;
-  color: #5a5a5a;
+  margin-top: 8px !important;
+  color: #5a5a5a !important;
 }
+#stepPass.login > li.securityImage,
 #stepPass .securityImage {
-  width: 80px;
-  height: 80px;
-  margin: 22px auto 8px;
-  background: #90a4b7;
+  width: 80px !important;
+  height: 80px !important;
+  margin: 18px auto 6px !important;
+  background: none !important;
 }
 #stepPass .securityImage img {
   display: block;
-  width: 80px;
-  height: 80px;
+  width: 80px !important;
+  height: 80px !important;
+  margin: 0 auto;
 }
 #stepPass .forgotPass {
-  margin: 18px 0 28px;
+  margin: 14px auto 0 !important;
   text-align: center;
 }
 #stepPass .forgotPass a {
@@ -150,8 +171,8 @@
 #stepPass .navRow {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin: 56px 0 8px;
+  gap: 18px;
+  margin: 48px auto 0 !important;
 }
 #stepPass .btnDark {
   width: 120px;
