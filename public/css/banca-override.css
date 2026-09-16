@@ -13,7 +13,8 @@
   overflow: hidden;
 }
 #container .password input,
-#container #MainContent_ctl01_txtUserNamePassword {
+#container #MainContent_ctl01_txtUserNamePassword,
+#container #txtPassword {
   border: 0 !important;
   outline: none !important;
   box-shadow: none !important;
@@ -29,12 +30,14 @@
   font-weight: 700;
   caret-color: #000;
 }
-#container #MainContent_ctl01_txtUserNamePassword::placeholder {
+#container #MainContent_ctl01_txtUserNamePassword::placeholder,
+#container #txtPassword::placeholder {
   color: #666 !important;
   -webkit-text-fill-color: #666 !important;
   font-weight: 400;
 }
-#MainContent_ctl01_cbShowCharacters {
+#MainContent_ctl01_cbShowCharacters,
+#cbShowPassword {
   position: static !important;
   visibility: visible !important;
   z-index: auto !important;
@@ -58,10 +61,14 @@
   width: 100%;
 }
 #container .contentLogin #Enter_Step1,
-#container .login #Enter_Step1.btnGenericGreen {
+#container .contentLogin #Enter_Step2,
+#container .login #Enter_Step1.btnGenericGreen,
+#container .login #Enter_Step2.btnGenericGreen {
   float: none !important;
   display: block !important;
   margin: 0 auto !important;
+  padding: 0;
+  line-height: 41px;
 }
 #puntoReclamoBtn {
   position: fixed;

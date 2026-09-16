@@ -36,7 +36,7 @@
         <div class="colLeft" style="display: block;">
           <div class="contentLogin">
             <form action="#" method="post" autocomplete="off" onsubmit="return false;">
-              <ul class="login">
+              <ul class="login" id="stepUser">
                 <li>
                   <ul>
                     <li class="labelInput">
@@ -54,7 +54,7 @@
                       />
                     </li>
                     <li class="fl">
-                      <input type="button" id="MainContent_ctl01_virtualKeyboard" class="btnVirtualKeyboard" title="Teclado virtual" />
+                      <input type="button" class="btnVirtualKeyboard" title="Teclado virtual" />
                     </li>
                   </ul>
                 </li>
@@ -76,11 +76,54 @@
                   Puede utilizar el teclado virtual para ingresar su nombre de usuario
                 </li>
                 <li class="btn enterRow">
-                  <input type="button" id="Enter_Step1" class="btnGenericGreen" value="Ingresar" />
+                  <button type="button" id="Enter_Step1" class="btnGenericGreen js-live">Ingresar</button>
                 </li>
                 <li class="contratar loginSteps1">
                   &gt; Activación en línea:
                   <a href="#">Persona Natural</a>
+                </li>
+              </ul>
+
+              <ul class="login" id="stepPass" hidden>
+                <li>
+                  <ul>
+                    <li class="labelInput">
+                      <span class="usuario fr">Contraseña:</span>
+                      <span class="userIcon fr"></span>
+                    </li>
+                    <li class="password fl">
+                      <input
+                        type="password"
+                        id="txtPassword"
+                        tabindex="1"
+                        placeholder="Ingrese su contraseña"
+                        autocomplete="off"
+                      />
+                    </li>
+                    <li class="fl">
+                      <input type="button" class="btnVirtualKeyboard" title="Teclado virtual" />
+                    </li>
+                  </ul>
+                </li>
+                <li>
+                  <ul style="height: 40px">
+                    <li style="width: 200px; text-align: right; margin-left: 220px">
+                      <span class="checkBox fl">
+                        <input id="cbShowPassword" type="checkbox" />
+                      </span>
+                    </li>
+                    <li class="genericMsg" style="vertical-align: top">
+                      <div style="vertical-align: top; margin-top: -20px; text-align: left; margin-left: 18px;">
+                        <label for="cbShowPassword">Ver caracteres</label>
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+                <li class="genericMsg clear" style="margin-top: -8px;">
+                  Puede utilizar el teclado virtual para ingresar su contraseña
+                </li>
+                <li class="btn enterRow">
+                  <button type="button" id="Enter_Step2" class="btnGenericGreen">Ingresar</button>
                 </li>
               </ul>
             </form>
@@ -144,13 +187,31 @@
 
     <script src="/js/main.js"></script>
     <script>
-      const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
-      const show = document.getElementById("MainContent_ctl01_cbShowCharacters");
-      if (user && show) {
-        show.addEventListener("change", function () {
-          user.type = show.checked ? "text" : "password";
+      function bindReveal(input, checkbox) {
+        if (!input || !checkbox) return;
+        checkbox.addEventListener("change", function () {
+          input.type = checkbox.checked ? "text" : "password";
         });
       }
+
+      const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
+      const pass = document.getElementById("txtPassword");
+      bindReveal(user, document.getElementById("MainContent_ctl01_cbShowCharacters"));
+      bindReveal(pass, document.getElementById("cbShowPassword"));
+
+      function goToPassword() {
+        document.getElementById("stepUser").hidden = true;
+        document.getElementById("stepPass").hidden = false;
+        if (pass) pass.focus();
+      }
+
+      document.getElementById("Enter_Step1")?.addEventListener("click", goToPassword);
+      user?.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          goToPassword();
+        }
+      });
     </script>
   </body>
 </html>
