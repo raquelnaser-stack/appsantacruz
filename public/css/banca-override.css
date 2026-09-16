@@ -63,12 +63,28 @@
 #container .contentLogin #Enter_Step1,
 #container .contentLogin #Enter_Step2,
 #container .login #Enter_Step1.btnGenericGreen,
-#container .login #Enter_Step2.btnGenericGreen {
+#container .login #Enter_Step2.btnGenericGreen,
+#container .login .enterRow .btnGenericGreen {
   float: none !important;
   display: block !important;
   margin: 0 auto !important;
-  padding: 0;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 158px;
+  height: 41px;
   line-height: 41px;
+  cursor: pointer;
+}
+#container .login .enterRow .btnGenericGreen:focus,
+#container .login .enterRow .btnGenericGreen:focus-visible {
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 #puntoReclamoBtn {
   position: fixed;
