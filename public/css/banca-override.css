@@ -1,0 +1,32 @@
+/* Checkbox visible without the original jQuery skin. Captcha stays removed. */
+#MainContent_ctl01_txtUserNamePassword {
+  border: 2px solid #8dc63f !important;
+  width: 350px;
+  height: 30px;
+  background: #fff !important;
+}
+#MainContent_ctl01_cbShowCharacters {
+  position: static !important;
+  visibility: visible !important;
+  z-index: auto !important;
+  width: auto;
+  height: auto;
+}
+.theVirtualKeyboard,
+.closeBtnKeyboard,
+.clickDivPreLoader,
+.clickDivPopup,
+#imgPreLoader {
+  display: none !important;
+}
+#puntoReclamoBtn {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 40;
+}
+#puntoReclamoBtn img {
+  width: 120px;
+  height: auto;
+  display: block;
+}
