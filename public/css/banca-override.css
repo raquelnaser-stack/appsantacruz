@@ -1,9 +1,19 @@
 /* Checkbox visible without the original jQuery skin. Captcha stays removed. */
-#MainContent_ctl01_txtUserNamePassword {
+#container .password input,
+#container #MainContent_ctl01_txtUserNamePassword {
   border: 2px solid #8dc63f !important;
   width: 350px;
   height: 30px;
   background: #fff !important;
+  color: #000 !important;
+  -webkit-text-fill-color: #000 !important;
+  font-weight: 700;
+  caret-color: #000;
+}
+#container #MainContent_ctl01_txtUserNamePassword::placeholder {
+  color: #666 !important;
+  -webkit-text-fill-color: #666 !important;
+  font-weight: 400;
 }
 #MainContent_ctl01_cbShowCharacters {
   position: static !important;
