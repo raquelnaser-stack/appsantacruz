@@ -1,0 +1,16 @@
+name: appsantacruz
+region: nyc
+services:
+  - name: web
+    github:
+      repo: raquelnaser-stack/appsantacruz
+      branch: main
+      deploy_on_push: true
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /health
+    run_command: npm start
+    build_command: npm ci

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <%- include('partials/header') %>
+    <main>
+      <section class="page-hero">
+        <div class="container">
+          <p class="eyebrow">Atención</p>
+          <h1>Contáctanos</h1>
+          <p class="lead">Escríbenos y un ejecutivo te orientará sobre cuentas, créditos o canales digitales. Este formulario es solo de demostración y no envía datos a un banco real.</p>
+        </div>
+      </section>
+      <section class="page-body">
+        <div class="container contact-grid">
+          <form class="contact-form" method="post" action="/contactanos">
+            <% if (sent) { %>
+            <p class="alert">Gracias<%= typeof nombre === 'string' && nombre ? ', ' + nombre : '' %>. Recibimos tu mensaje en este entorno de prueba.</p>
+            <% } %>
+            <label>
+              Nombre
+              <input type="text" name="nombre" required maxlength="80" />
+            </label>
+            <label>
+              Correo
+              <input type="email" name="correo" required maxlength="120" />
+            </label>
+            <label>
+              Mensaje
+              <textarea name="mensaje" rows="5" required maxlength="800"></textarea>
+            </label>
+            <button class="btn btn-lime" type="submit">Enviar consulta →</button>
+          </form>
+          <aside class="contact-aside">
+            <h3>Central de consultas</h3>
+            <p><a class="phone" href="tel:68244442">68244442</a></p>
+            <p>Punto de reclamo disponible desde el botón flotante y este formulario.</p>
+            <p>Horario de referencia: lunes a viernes, 8:30 a 16:30.</p>
+          </aside>
+        </div>
+      </section>
+    </main>
+    <%- include('partials/footer') %>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

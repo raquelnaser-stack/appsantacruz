@@ -1,0 +1,56 @@
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div>
+      <a class="brand brand-footer" href="/">
+        <img src="/img/logo.svg" alt="" width="40" height="40" />
+        <span>Mercantil Santa Cruz</span>
+      </a>
+      <p>Tu dinero evoluciona. Cuentas, créditos y canales digitales para personas, PYME y empresas.</p>
+    </div>
+    <div>
+      <h4>Institucional</h4>
+      <ul>
+        <% footer.institutional.forEach((link) => { %>
+        <li>
+          <a href="<%= link.href %>" <%= link.external ? 'target="_blank" rel="noopener noreferrer"' : '' %>><%= link.label %></a>
+        </li>
+        <% }) %>
+      </ul>
+    </div>
+    <div>
+      <h4>Ayuda</h4>
+      <ul>
+        <% footer.help.forEach((link) => { %>
+        <li><a href="<%= link.href %>"><%= link.label %></a></li>
+        <% }) %>
+      </ul>
+    </div>
+    <div>
+      <h4>Descubre</h4>
+      <p>Central de consultas</p>
+      <a class="phone" href="tel:68244442">68244442</a>
+    </div>
+  </div>
+  <div class="container legal">
+    <p>Proyecto frontend de demostración en Node.js. No es el sitio oficial ni un canal de banca real. No solicites ni envíes claves, usuarios ni datos de tarjetas.</p>
+    <p>© <%= year %> Mercantil Santa Cruz — demo local.</p>
+  </div>
+</footer>
+
+<a class="reclamo" href="/contactanos" aria-label="Punto de reclamo">
+  Punto<br />reclamo
+</a>
+
+<div class="modal" id="comunicado" hidden>
+  <div class="modal-card" role="dialog" aria-labelledby="comunicado-title" aria-modal="true">
+    <div class="modal-brand">
+      <img src="/img/logo.svg" alt="" width="36" height="36" />
+      <span>Mercantil Santa Cruz</span>
+    </div>
+    <button class="modal-close" type="button" aria-label="Cerrar">×</button>
+    <h3 id="comunicado-title">Comunicado</h3>
+    <p>Este sitio es una recreación visual para desarrollo. Nunca solicites ni entregues información confidencial (usuarios, contraseñas o claves de tarjetas) en correos, redes o enlaces externos.</p>
+    <p>Si recibes una solicitud de ese tipo, no ingreses al enlace y repórtalo en agencias o por la Central de Consultas.</p>
+    <p>Teléfono de contacto de referencia: <a href="tel:68244442">68244442</a></p>
+  </div>
+</div>
