@@ -19,6 +19,21 @@
 #imgPreLoader {
   display: none !important;
 }
+#container .contentLogin .enterRow {
+  height: auto !important;
+  margin: 18px 0 8px !important;
+  padding: 0 !important;
+  text-align: center;
+  float: none !important;
+  clear: both;
+  width: 100%;
+}
+#container .contentLogin #Enter_Step1,
+#container .login #Enter_Step1.btnGenericGreen {
+  float: none !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
 #puntoReclamoBtn {
   position: fixed;
   right: 10px;
