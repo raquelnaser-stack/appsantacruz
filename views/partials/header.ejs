@@ -1,13 +1,12 @@
-<header class="site-header">
-  <div class="header-top">
-    <a class="brand" href="/" aria-label="Mercantil Santa Cruz">
-      <img src="/img/logo.svg" alt="" width="46" height="46" />
-      <span>Mercantil Santa Cruz</span>
-    </a>
-    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-    <div class="header-tools">
+<header class="bm-header">
+  <a class="header-logo-container" href="/" aria-label="Mercantil Santa Cruz">
+    <img class="header-logo" src="<%= ASSETS.headerLogo %>" alt="Mercantil Santa Cruz" width="350" height="100" />
+  </a>
+  <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="header-right">
+    <div class="header-top-row">
       <nav class="segment-nav" aria-label="Segmentos">
         <% segments.forEach((item) => { %>
         <a class="<%= (segment === item.id || currentPath === '/' + item.id) ? 'is-active' : '' %>" href="<%= item.href %>"><%= item.label %></a>
@@ -16,10 +15,10 @@
       <a class="btn btn-orange" href="/mis-productos">Mis Productos</a>
       <a class="btn btn-forest" href="/banca-24-7">Banca por Internet</a>
     </div>
+    <nav class="product-nav" aria-label="Productos">
+      <% nav.forEach((item) => { %>
+      <a class="<%= currentPath === '/' + item.slug ? 'is-active' : '' %>" href="/<%= item.slug %>"><%= item.label %></a>
+      <% }) %>
+    </nav>
   </div>
-  <nav class="product-nav" aria-label="Productos">
-    <% nav.forEach((item) => { %>
-    <a class="<%= currentPath === '/' + item.slug ? 'is-active' : '' %>" href="/<%= item.slug %>"><%= item.label %></a>
-    <% }) %>
-  </nav>
 </header>

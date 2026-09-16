@@ -1,16 +1,18 @@
 const path = require("path");
 const express = require("express");
-const { segments, nav, slides, services, promos, pages, footer } = require("./data/site");
+const { ASSETS, segments, nav, slides, services, promos, channels, pages, footer } = require("./data/site");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.locals.ASSETS = ASSETS;
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
+  res.locals.ASSETS = ASSETS;
   res.locals.segments = segments;
   res.locals.nav = nav;
   res.locals.footer = footer;
@@ -22,10 +24,11 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => {
   res.render("index", {
-    title: "BMSC | Banco Mercantil Santa Cruz",
+    title: "BMSC | Banco Mercantil Santa Cruz S.A.",
     slides,
     services,
-    promos
+    promos,
+    channels
   });
 });
 
@@ -45,6 +48,10 @@ app.post("/contactanos", (req, res) => {
     correo: (correo || "").trim(),
     mensaje: (mensaje || "").trim()
   });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).type("text/plain").send("ok");
 });
 
 app.get("/:slug", (req, res, next) => {
@@ -70,10 +77,6 @@ app.use((req, res) => {
       ]
     }
   });
-});
-
-app.get("/health", (req, res) => {
-  res.status(200).type("text/plain").send("ok");
 });
 
 app.listen(PORT, "0.0.0.0", () => {
