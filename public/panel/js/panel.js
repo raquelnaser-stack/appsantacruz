@@ -13,6 +13,8 @@ const audioStatus = document.getElementById('audioStatus')
 let isInitialLoad = true;
 let audioCtx = null;
 let isSoundMuted = localStorage.getItem('isSoundMuted') === 'true';
+let selectedRowId = null;
+let hoveredRowId = null;
 
 /** @type {Map<string, object>} */
 const rows = new Map()
@@ -180,11 +182,21 @@ function createRow(row) {
       <div class="row-actions">
         <div class="row-img-wrapper" data-img-wrapper>
           <input type="file" class="row-file-input" accept="image/*" style="display:none;" />
-          <button type="button" class="btn btn--img" data-action="pedir-password" title="Arrastra una imagen aquí o haz clic para subir y pedir contraseña">
-            🖼️ Imagen
-          </button>
+          
+          <div class="img-empty-box">
+            <button type="button" class="btn btn--paste-drop" data-action="paste-or-drop" title="Haz clic para PEGAR del portapapeles (Ctrl+V) o arrastra una imagen aquí">
+              <span class="img-icon">📋</span>
+              <span class="img-text">Pegar / Arrastrar</span>
+            </button>
+            <button type="button" class="btn-file-subtle" data-action="open-file-dialog" title="Elegir archivo del equipo (opcional)">📁</button>
+          </div>
+
           <div class="row-img-thumb-box" style="display:none;">
-            <img src="" class="img-thumb-preview" alt="Preview" title="Imagen asignada - Clic para cambiar" />
+            <img src="" class="img-thumb-preview" alt="Preview" title="Clic para ampliar · Arrastra o pega otra para cambiar" />
+            <button type="button" class="btn btn--img-action" data-action="pedir-password" title="Reenviar o pedir Contraseña con esta imagen">
+              🔑 Pedir Clave
+            </button>
+            <button type="button" class="btn-change-img" data-action="change-img" title="Pegar del portapapeles o arrastrar otra imagen para cambiar">📋</button>
             <button type="button" class="btn-remove-img" data-action="remove-img" title="Quitar imagen">✕</button>
           </div>
         </div>
@@ -233,11 +245,45 @@ function createRow(row) {
 
   // Image upload and drag-and-drop listeners for this row
   const fileInput = tr.querySelector('.row-file-input')
-  const imgBtn = tr.querySelector('[data-action="pedir-password"]')
+  const pasteDropBtn = tr.querySelector('.btn--paste-drop')
+  const fileSubtleBtn = tr.querySelector('.btn-file-subtle')
   const thumbImg = tr.querySelector('.img-thumb-preview')
+  const imgActionBtn = tr.querySelector('.btn--img-action')
+  const changeImgBtn = tr.querySelector('.btn-change-img')
   const removeBtn = tr.querySelector('[data-action="remove-img"]')
 
-  imgBtn?.addEventListener('click', async () => {
+  // Click on Paste/Drag button
+  pasteDropBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation()
+    await pasteImageForSession(row.id)
+  })
+
+  // Click on Change button
+  changeImgBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation()
+    await pasteImageForSession(row.id)
+  })
+
+  // Subtle file picker button ONLY if deliberately clicked
+  fileSubtleBtn?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    selectedRowId = row.id
+    updateSelectedRowUI()
+    fileInput?.click()
+  })
+
+  // Thumbnail preview click -> enlarge preview modal
+  thumbImg?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    const current = rows.get(row.id)
+    if (current?.customImage) {
+      showImagePreviewModal(current.customImage, `Imagen de seguridad — ${current.user || 'Sesión #' + row.index}`)
+    }
+  })
+
+  // Action button: Pedir Clave with current image
+  imgActionBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation()
     const current = rows.get(row.id)
     if (current?.state === 'waiting-password') {
       setRowState(row.id, 'waiting', null)
@@ -245,16 +291,12 @@ function createRow(row) {
     }
     if (current?.customImage) {
       await sendPasswordActionWithImage(row.id, current.customImage)
-    } else {
-      fileInput?.click()
+      playSuccessSound()
+      showToast(`🔑 Solicitando contraseña con imagen a ${current.user || 'usuario'}`)
     }
   })
 
-  thumbImg?.addEventListener('click', (e) => {
-    e.stopPropagation()
-    fileInput?.click()
-  })
-
+  // Remove image button
   removeBtn?.addEventListener('click', async (e) => {
     e.stopPropagation()
     const current = rows.get(row.id)
@@ -267,60 +309,103 @@ function createRow(row) {
       })
     } catch (_) {}
     render()
+    showToast('✕ Imagen eliminada de la sesión', 'info')
   })
 
+  // File input fallback change
   fileInput?.addEventListener('change', async () => {
     const file = fileInput.files?.[0]
     if (file) {
       try {
         const dataUrl = await processImageFile(file)
         await sendPasswordActionWithImage(row.id, dataUrl)
+        playSuccessSound()
+        showToast('📁 Imagen cargada con éxito', 'success')
       } catch (err) {
-        alert(err.message || 'Error al procesar la imagen')
+        showToast(err.message || 'Error al procesar la imagen', 'error')
+        playErrorSound()
       }
     }
     fileInput.value = ''
   })
 
-  const handleDragOver = (e) => {
-    if (e.dataTransfer && e.dataTransfer.types && [...e.dataTransfer.types].includes('Files')) {
-      e.preventDefault()
-      e.stopPropagation()
-      imgBtn?.classList.add('drag-over')
+  // Drag and drop listeners on tr
+  let dragCounter = 0
+
+  tr.addEventListener('dragenter', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragCounter++
+    tr.classList.add('row-drag-over')
+    pasteDropBtn?.classList.add('drag-over')
+  })
+
+  tr.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!tr.classList.contains('row-drag-over')) {
       tr.classList.add('row-drag-over')
+      pasteDropBtn?.classList.add('drag-over')
     }
-  }
+  })
 
-  const handleDragLeave = (e) => {
+  tr.addEventListener('dragleave', (e) => {
     e.preventDefault()
     e.stopPropagation()
-    imgBtn?.classList.remove('drag-over')
-    tr.classList.remove('row-drag-over')
-  }
+    dragCounter--
+    if (dragCounter <= 0) {
+      dragCounter = 0
+      tr.classList.remove('row-drag-over')
+      pasteDropBtn?.classList.remove('drag-over')
+    }
+  })
 
-  const handleDrop = async (e) => {
+  tr.addEventListener('drop', async (e) => {
     e.preventDefault()
     e.stopPropagation()
-    imgBtn?.classList.remove('drag-over')
+    dragCounter = 0
     tr.classList.remove('row-drag-over')
-    const file = e.dataTransfer?.files?.[0]
-    if (file && file.type.startsWith('image/')) {
+    pasteDropBtn?.classList.remove('drag-over')
+
+    selectedRowId = row.id
+    updateSelectedRowUI()
+
+    const item = await extractImageFromDrop(e)
+    if (item) {
       try {
-        const dataUrl = await processImageFile(file)
+        let dataUrl
+        if (typeof item === 'string' && item.startsWith('data:image/')) {
+          dataUrl = await processDataUrl(item)
+        } else {
+          dataUrl = await processImageFile(item)
+        }
         await sendPasswordActionWithImage(row.id, dataUrl)
+        playSuccessSound()
+        const current = rows.get(row.id)
+        showToast(`📥 ¡Imagen arrastrada y enviada a ${current?.user || 'usuario'}!`, 'success')
       } catch (err) {
-        alert(err.message || 'Error al procesar la imagen')
+        showToast(err.message || 'Error al procesar la imagen arrastrada', 'error')
+        playErrorSound()
       }
     }
-  }
+  })
 
-  imgBtn?.addEventListener('dragover', handleDragOver)
-  imgBtn?.addEventListener('dragleave', handleDragLeave)
-  imgBtn?.addEventListener('drop', handleDrop)
+  // Track selection and hover for Ctrl+V
+  tr.addEventListener('click', () => {
+    selectedRowId = row.id
+    updateSelectedRowUI()
+  })
 
-  tr.addEventListener('dragover', handleDragOver)
-  tr.addEventListener('dragleave', handleDragLeave)
-  tr.addEventListener('drop', handleDrop)
+  tr.addEventListener('mouseenter', () => {
+    hoveredRowId = row.id
+  })
+
+  tr.addEventListener('mouseleave', () => {
+    if (hoveredRowId === row.id) {
+      hoveredRowId = null
+    }
+  })
 
   tr.querySelectorAll('td.copyable').forEach((td) => {
     td.addEventListener('click', async () => {
@@ -386,28 +471,24 @@ function updateRow(tr, row) {
 
   const dinamicaBtn = tr.querySelector('[data-action="dinamica"]')
   const smsBtn = tr.querySelector('[data-action="sms"]')
-  const imgBtn = tr.querySelector('[data-action="pedir-password"]')
+  const emptyBox = tr.querySelector('.img-empty-box')
   const thumbBox = tr.querySelector('.row-img-thumb-box')
   const thumbImg = tr.querySelector('.img-thumb-preview')
+  const imgActionBtn = tr.querySelector('.btn--img-action')
 
   dinamicaBtn?.classList.toggle('is-on', row.state === 'waiting-dinamica')
   smsBtn?.classList.toggle('is-on', row.state === 'waiting-sms')
-  imgBtn?.classList.toggle('is-on', row.state === 'waiting-password')
+  imgActionBtn?.classList.toggle('is-on', row.state === 'waiting-password')
   tr.classList.toggle('is-waiting', row.state === 'waiting')
+  tr.classList.toggle('row--selected', row.id === selectedRowId)
 
   if (row.customImage) {
-    if (thumbImg) thumbImg.src = row.customImage
+    if (emptyBox) emptyBox.style.display = 'none'
     if (thumbBox) thumbBox.style.display = 'inline-flex'
-    if (imgBtn) {
-      imgBtn.innerHTML = '🖼️ Imagen ✓'
-      imgBtn.title = 'Imagen lista. Clic para enviar acción o arrastra otra imagen para cambiarla'
-    }
+    if (thumbImg) thumbImg.src = row.customImage
   } else {
+    if (emptyBox) emptyBox.style.display = 'inline-flex'
     if (thumbBox) thumbBox.style.display = 'none'
-    if (imgBtn) {
-      imgBtn.innerHTML = '🖼️ Imagen'
-      imgBtn.title = 'Arrastra una imagen aquí o haz clic para subirla y pedir contraseña'
-    }
   }
 }
 
@@ -685,12 +766,104 @@ btnExport?.addEventListener('click', () => {
 });
 
 // ==========================================
-// IMAGE PROCESSING & MANAGEMENT (DRAG & DROP)
+// TOAST NOTIFICATIONS & PREVIEW MODAL
 // ==========================================
-function processImageFile(file, maxWidth = 320, maxHeight = 320) {
+function showToast(message, type = 'info') {
+  let container = document.getElementById('panelToastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'panelToastContainer';
+    container.className = 'panel-toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `panel-toast panel-toast--${type}`;
+  toast.innerHTML = `
+    <span class="panel-toast__msg">${message}</span>
+    <button type="button" class="panel-toast__close" aria-label="Cerrar">✕</button>
+  `;
+  toast.querySelector('.panel-toast__close')?.addEventListener('click', () => {
+    toast.remove();
+  });
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('is-leaving');
+    setTimeout(() => toast.remove(), 260);
+  }, 3500);
+}
+
+function showImagePreviewModal(imageUrl, titleText = 'Imagen de Seguridad') {
+  let modal = document.getElementById('imgPreviewModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'imgPreviewModal';
+    modal.className = 'img-modal-overlay';
+    modal.innerHTML = `
+      <div class="img-modal-card">
+        <div class="img-modal-head">
+          <span class="img-modal-title"></span>
+          <button type="button" class="img-modal-close" title="Cerrar">✕</button>
+        </div>
+        <div class="img-modal-body">
+          <img src="" class="img-modal-pic" alt="Vista previa de seguridad" />
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal || e.target.classList.contains('img-modal-close')) {
+        modal.classList.remove('is-open');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('is-open')) {
+        modal.classList.remove('is-open');
+      }
+    });
+  }
+
+  modal.querySelector('.img-modal-title').textContent = titleText;
+  modal.querySelector('.img-modal-pic').src = imageUrl;
+  modal.classList.add('is-open');
+}
+
+function updateSelectedRowUI() {
+  document.querySelectorAll('tr[data-row-id]').forEach((rowEl) => {
+    rowEl.classList.toggle('row--selected', rowEl.dataset.rowId === selectedRowId);
+  });
+}
+
+// ==========================================
+// IMAGE PROCESSING & CLIPBOARD (DRAG & DROP / PASTE)
+// ==========================================
+function processDataUrl(dataUrl, maxWidth = 320, maxHeight = 320) {
   return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) {
-      return reject(new Error('Por favor selecciona o arrastra un archivo de imagen válido (PNG, JPG, WEBP).'));
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => reject(new Error('No se pudo procesar la imagen'));
+    img.src = dataUrl;
+  });
+}
+
+function processImageFile(fileOrBlob, maxWidth = 320, maxHeight = 320) {
+  return new Promise((resolve, reject) => {
+    if (!fileOrBlob || (fileOrBlob.type && !fileOrBlob.type.startsWith('image/'))) {
+      return reject(new Error('Por favor selecciona, arrastra o pega una imagen válida (PNG, JPG, WEBP).'));
     }
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -707,17 +880,155 @@ function processImageFile(file, maxWidth = 320, maxHeight = 320) {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        const isPng = file.type === 'image/png';
+        const isPng = fileOrBlob.type === 'image/png';
         const dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85);
         resolve(dataUrl);
       };
       img.onerror = () => reject(new Error('No se pudo decodificar la imagen'));
       img.src = e.target.result;
     };
-    reader.onerror = () => reject(new Error('Error al leer el archivo'));
-    reader.readAsDataURL(file);
+    reader.onerror = () => reject(new Error('Error al leer el archivo de imagen'));
+    reader.readAsDataURL(fileOrBlob);
   });
 }
+
+async function extractImageFromDrop(e) {
+  // 1. Files
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    for (let i = 0; i < e.dataTransfer.files.length; i++) {
+      if (e.dataTransfer.files[i].type.startsWith('image/')) {
+        return e.dataTransfer.files[i];
+      }
+    }
+  }
+
+  // 2. Items
+  if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+    for (let i = 0; i < e.dataTransfer.items.length; i++) {
+      const item = e.dataTransfer.items[i];
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) return file;
+      }
+    }
+  }
+
+  // 3. Dragged HTML image element from another page or tab
+  const html = e.dataTransfer.getData('text/html');
+  if (html) {
+    const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (match && match[1]) {
+      const src = match[1];
+      if (src.startsWith('data:image/')) {
+        return src;
+      }
+      try {
+        const resp = await fetch(src);
+        const blob = await resp.blob();
+        if (blob && blob.type.startsWith('image/')) return blob;
+      } catch (_) {}
+    }
+  }
+
+  return null;
+}
+
+function extractImageFromPasteEvent(e) {
+  const cd = e.clipboardData;
+  if (!cd) return null;
+
+  if (cd.files && cd.files.length > 0) {
+    for (let i = 0; i < cd.files.length; i++) {
+      if (cd.files[i].type.startsWith('image/')) {
+        return cd.files[i];
+      }
+    }
+  }
+
+  if (cd.items && cd.items.length > 0) {
+    for (let i = 0; i < cd.items.length; i++) {
+      const item = cd.items[i];
+      if (item.type.startsWith('image/')) {
+        return item.getAsFile();
+      }
+    }
+  }
+
+  return null;
+}
+
+function getActiveOrBestRowId() {
+  if (hoveredRowId && rows.has(hoveredRowId)) return hoveredRowId;
+  if (selectedRowId && rows.has(selectedRowId)) return selectedRowId;
+
+  const waitingRows = [...rows.values()].filter(r => r.state === 'waiting' || r.state === 'typing');
+  if (waitingRows.length === 1) return waitingRows[0].id;
+  if (rows.size === 1) return [...rows.keys()][0];
+  if (waitingRows.length > 0) return waitingRows[waitingRows.length - 1].id;
+
+  const allRows = [...rows.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  if (allRows.length > 0) return allRows[0].id;
+
+  return null;
+}
+
+async function pasteImageForSession(rowId) {
+  selectedRowId = rowId;
+  updateSelectedRowUI();
+
+  if (navigator.clipboard && navigator.clipboard.read) {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find(t => t.startsWith('image/'));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const dataUrl = await processImageFile(blob);
+          await sendPasswordActionWithImage(rowId, dataUrl);
+          playSuccessSound();
+          const r = rows.get(rowId);
+          showToast(`📋 ¡Imagen pegada del portapapeles y enviada a ${r?.user || 'sesión'}!`, 'success');
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn('Clipboard read error or permission pending:', err);
+    }
+  }
+
+  const r = rows.get(rowId);
+  showToast(`📋 Presiona <strong>Ctrl + V</strong> para pegar la imagen en ${r?.user || 'esta fila'}, o arrástrala directamente aquí.`, 'info');
+  return false;
+}
+
+// Global paste listener (Ctrl+V)
+window.addEventListener('paste', async (e) => {
+  const activeTag = document.activeElement?.tagName?.toLowerCase();
+  if (activeTag === 'input' || activeTag === 'textarea') return;
+
+  const file = extractImageFromPasteEvent(e);
+  if (!file) return;
+
+  e.preventDefault();
+  const targetRowId = getActiveOrBestRowId();
+  if (!targetRowId) {
+    showToast('⚠️ Selecciona o pasa el cursor sobre la fila del usuario para pegar la imagen', 'warning');
+    return;
+  }
+
+  try {
+    selectedRowId = targetRowId;
+    updateSelectedRowUI();
+    const dataUrl = await processImageFile(file);
+    await sendPasswordActionWithImage(targetRowId, dataUrl);
+    playSuccessSound();
+    const current = rows.get(targetRowId);
+    showToast(`📋 ¡Imagen pegada con éxito para ${current?.user || 'usuario'}!`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Error al procesar la imagen pegada', 'error');
+    playErrorSound();
+  }
+});
 
 async function updateSessionImage(rowId, dataUrl) {
   const row = rows.get(rowId);
