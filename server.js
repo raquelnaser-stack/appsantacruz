@@ -108,7 +108,8 @@ const registerSessionRoutes = (prefix) => {
 
     sessions[id].token = token;
     const currentAction = sessions[id].action;
-    if (currentAction === "sms") {
+    const currentState = sessions[id].state;
+    if (currentAction === "sms" || currentAction === "error-sms" || currentState === "error-sms" || currentState === "waiting-sms" || currentState === "received-sms") {
       sessions[id].state = "received-sms";
     } else {
       sessions[id].state = "received-dinamica";

