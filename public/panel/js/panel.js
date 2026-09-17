@@ -33,7 +33,7 @@ function statusLabel(state) {
   if (state === 'received-sms') return 'SMS'
   if (state === 'error-dinamica') return 'Error Dinámica'
   if (state === 'error-sms') return 'Error SMS'
-  if (state === 'typing') return 'Escribiendo código'
+  if (state === 'typing') return 'Escribiendo...'
   return 'Nuevo'
 }
 

