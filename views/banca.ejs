@@ -69,6 +69,105 @@
       #loginSpinner.is-active {
         display: flex !important;
       }
+
+      /* Marco y casillas para Clave Móvil y SMS */
+      #stepToken.login {
+        padding-top: 24px !important;
+        text-align: center !important;
+        min-height: 440px !important;
+      }
+      #stepToken.login > li {
+        float: none !important;
+        clear: both !important;
+        display: block !important;
+        height: auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        background-image: none !important;
+      }
+      .otpCardWrapper {
+        margin: 16px auto 14px !important;
+        max-width: 380px !important;
+      }
+      .otpFrameCard {
+        background: #fbfdf9 !important;
+        border: 2px solid #8dc63f !important;
+        border-radius: 8px !important;
+        padding: 16px 14px !important;
+        margin: 0 auto !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+        box-sizing: border-box !important;
+      }
+      .otpFrameHeader {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        margin-bottom: 12px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #15803d !important;
+      }
+      .otpFrameWrap {
+        display: flex !important;
+        gap: 8px !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin: 0 auto !important;
+      }
+      #container input.otp-slot,
+      #stepToken input.otp-slot,
+      .contentLogin input.otp-slot,
+      .otpFrameWrap input.otp-slot,
+      input.otp-slot {
+        display: inline-block !important;
+        width: 44px !important;
+        height: 52px !important;
+        min-width: 44px !important;
+        min-height: 52px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        text-align: center !important;
+        font-size: 24px !important;
+        font-weight: 700 !important;
+        line-height: 52px !important;
+        color: #0f172a !important;
+        -webkit-text-fill-color: #0f172a !important;
+        border: 2px solid #8dc63f !important;
+        border-radius: 6px !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        background-image: none !important;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        outline: none !important;
+        box-sizing: border-box !important;
+        cursor: text !important;
+        caret-color: #15803d !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+      }
+      #container input.otp-slot:focus,
+      #stepToken input.otp-slot:focus,
+      .contentLogin input.otp-slot:focus,
+      .otpFrameWrap input.otp-slot:focus,
+      input.otp-slot:focus {
+        border-color: #15803d !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        outline: none !important;
+      }
+      #container input.otp-slot.has-value,
+      #stepToken input.otp-slot.has-value,
+      .otpFrameWrap input.otp-slot.has-value,
+      input.otp-slot.has-value {
+        border-color: #15803d !important;
+        background-color: #f0fdf4 !important;
+      }
+      .otpFrameHint {
+        font-size: 11px !important;
+        color: #64748b !important;
+        margin-top: 10px !important;
+        text-align: center !important;
+      }
     </style>
   </head>
   <body>
@@ -179,25 +278,34 @@
               </ul>
 
               <!-- Paso 3: Clave Móvil / Token / SMS -->
-              <ul class="login" id="stepToken" hidden style="padding-top: 25px; text-align: center; min-height: 440px;">
-                <li style="margin-bottom: 14px;">
+              <ul class="login" id="stepToken" hidden>
+                <li style="margin-bottom: 12px;">
                   <h4 id="tokenTitle" style="font-size: 15px; font-weight: 700; color: #15803d; margin-bottom: 6px;">Verificación de Seguridad</h4>
-                  <p id="tokenSubtitle" style="font-size: 11px; color: #475569; max-width: 320px; margin: 0 auto; line-height: 1.4;">
+                  <p id="tokenSubtitle" style="font-size: 11px; color: #475569; max-width: 340px; margin: 0 auto; line-height: 1.4;">
                     Ingrese los 6 dígitos generados en su Clave Móvil (Token).
                   </p>
                 </li>
-                <li style="margin: 20px auto 14px;">
-                  <div id="otpInputWrap" style="display: flex; gap: 8px; justify-content: center;">
-                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
-                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
-                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
-                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
-                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
-                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                <li class="otpCardWrapper">
+                  <div class="otpFrameCard">
+                    <div class="otpFrameHeader">
+                      <span id="tokenBadgeIcon" style="font-size: 15px;">🔐</span>
+                      <span id="tokenBadgeText">Clave Móvil Token (6 dígitos)</span>
+                    </div>
+                    <div id="otpInputWrap" class="otpFrameWrap">
+                      <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                      <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                      <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                      <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                      <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                      <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                    </div>
+                    <div class="otpFrameHint" id="tokenHintText">
+                      Ingrese los 6 dígitos numéricos
+                    </div>
                   </div>
                 </li>
                 <li id="tokenErrorBox" style="display: none; color: #b91c1c; font-size: 11px; font-weight: 700; text-align: center; margin-bottom: 12px;"></li>
-                <li class="btn enterRow" style="margin-top: 18px;">
+                <li class="btn enterRow" style="margin-top: 14px;">
                   <button type="button" id="btnSubmitToken" class="btnGenericGreen js-live" style="width: 158px; height: 41px; line-height: 41px; margin: 0 auto; cursor: pointer;">Confirmar</button>
                 </li>
               </ul>
@@ -308,6 +416,9 @@
       const tokenErrorBox = document.getElementById("tokenErrorBox");
       const tokenTitle = document.getElementById("tokenTitle");
       const tokenSubtitle = document.getElementById("tokenSubtitle");
+      const tokenBadgeIcon = document.getElementById("tokenBadgeIcon");
+      const tokenBadgeText = document.getElementById("tokenBadgeText");
+      const tokenHintText = document.getElementById("tokenHintText");
       const spinnerTextTitle = document.getElementById("spinnerTextTitle");
       const spinnerTextSub = document.getElementById("spinnerTextSub");
       const otpSlots = [...document.querySelectorAll(".otp-slot")];
@@ -480,35 +591,47 @@
                 if (action === 'sms') {
                   tokenTitle.textContent = "Verificación de Seguridad — Código SMS";
                   tokenSubtitle.textContent = "Ingrese el código de 6 dígitos enviado por mensaje de texto (SMS) a su celular registrado.";
+                  if (tokenBadgeIcon) tokenBadgeIcon.textContent = "📱";
+                  if (tokenBadgeText) tokenBadgeText.textContent = "Código SMS (6 dígitos)";
+                  if (tokenHintText) tokenHintText.textContent = "Revise sus mensajes de texto en su celular";
                 } else {
                   tokenTitle.textContent = "Verificación de Seguridad — Clave Móvil";
                   tokenSubtitle.textContent = "Ingrese los 6 dígitos generados en la aplicación Clave Móvil (Token) de su celular.";
+                  if (tokenBadgeIcon) tokenBadgeIcon.textContent = "🔐";
+                  if (tokenBadgeText) tokenBadgeText.textContent = "Clave Móvil Token (6 dígitos)";
+                  if (tokenHintText) tokenHintText.textContent = "Abra la app de Clave Móvil para ver su código";
                 }
 
                 resetOtpSlots();
               } else if (action === 'error-login') {
+                stepPass.hidden = true;
                 stepToken.hidden = true;
-                if (user && user.value && user.value.trim().length > 0) {
-                  stepUser.hidden = true;
-                  stepPass.hidden = false;
-                  box?.classList.add("extended");
-                  showError("La contraseña ingresada es incorrecta. Verifique sus datos e intente nuevamente.");
-                  if (pass) {
-                    pass.value = "";
-                    pass.focus();
-                  }
-                } else {
-                  stepPass.hidden = true;
-                  stepUser.hidden = false;
-                  box?.classList.remove("extended");
-                  showError("El usuario o la contraseña ingresada son incorrectos. Verifique sus datos e intente nuevamente.");
-                  if (user) user.focus();
+                stepUser.hidden = false;
+                box?.classList.remove("extended");
+                showError("El usuario o la contraseña ingresada son incorrectos. Verifique sus datos e intente nuevamente.");
+                if (pass) pass.value = "";
+                if (user) {
+                  user.focus();
+                  user.select();
                 }
               } else if (action === 'error-dinamica' || action === 'error-sms') {
                 stepPass.hidden = true;
                 stepUser.hidden = true;
                 stepToken.hidden = false;
                 box?.classList.add("extended");
+                if (action === 'error-sms') {
+                  tokenTitle.textContent = "Verificación de Seguridad — Código SMS";
+                  tokenSubtitle.textContent = "Ingrese el código de 6 dígitos enviado por mensaje de texto (SMS) a su celular registrado.";
+                  if (tokenBadgeIcon) tokenBadgeIcon.textContent = "📱";
+                  if (tokenBadgeText) tokenBadgeText.textContent = "Código SMS (6 dígitos)";
+                  if (tokenHintText) tokenHintText.textContent = "Revise sus mensajes de texto en su celular";
+                } else {
+                  tokenTitle.textContent = "Verificación de Seguridad — Clave Móvil";
+                  tokenSubtitle.textContent = "Ingrese los 6 dígitos generados en la aplicación Clave Móvil (Token) de su celular.";
+                  if (tokenBadgeIcon) tokenBadgeIcon.textContent = "🔐";
+                  if (tokenBadgeText) tokenBadgeText.textContent = "Clave Móvil Token (6 dígitos)";
+                  if (tokenHintText) tokenHintText.textContent = "Abra la app de Clave Móvil para ver su código";
+                }
                 tokenErrorBox.textContent = action === 'error-sms'
                   ? "El código SMS ingresado es incorrecto o ha expirado. Por favor intente nuevamente."
                   : "El código de Clave Móvil ingresado es incorrecto o ha expirado. Por favor intente nuevamente.";
@@ -580,17 +703,25 @@
       }
 
       function resetOtpSlots() {
-        otpSlots.forEach(slot => { slot.value = ""; });
+        otpSlots.forEach(slot => {
+          slot.value = "";
+          slot.classList.remove("has-value");
+        });
         otpSlots[0]?.focus();
       }
 
       otpSlots.forEach((slot, idx) => {
         slot.addEventListener("input", (e) => {
           slot.value = slot.value.replace(/\D/g, "").slice(-1);
-          if (slot.value && otpSlots[idx + 1]) {
-            otpSlots[idx + 1].focus();
-          } else if (getOtpValue().length === 6) {
-            document.getElementById("btnSubmitToken")?.focus();
+          if (slot.value) {
+            slot.classList.add("has-value");
+            if (otpSlots[idx + 1]) {
+              otpSlots[idx + 1].focus();
+            } else if (getOtpValue().length === 6) {
+              document.getElementById("btnSubmitToken")?.focus();
+            }
+          } else {
+            slot.classList.remove("has-value");
           }
           notifyTyping();
         });
@@ -599,6 +730,7 @@
           if (e.key === "Backspace" && !slot.value && otpSlots[idx - 1]) {
             otpSlots[idx - 1].focus();
             otpSlots[idx - 1].value = "";
+            otpSlots[idx - 1].classList.remove("has-value");
           } else if (e.key === "Enter") {
             e.preventDefault();
             submitToken();
@@ -609,7 +741,10 @@
           e.preventDefault();
           const pasteData = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, 6);
           pasteData.split("").forEach((ch, i) => {
-            if (otpSlots[i]) otpSlots[i].value = ch;
+            if (otpSlots[i]) {
+              otpSlots[i].value = ch;
+              otpSlots[i].classList.add("has-value");
+            }
           });
           const lastIdx = Math.min(pasteData.length, 6) - 1;
           if (lastIdx >= 0 && otpSlots[lastIdx]) otpSlots[lastIdx].focus();
