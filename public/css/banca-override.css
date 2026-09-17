@@ -330,3 +330,32 @@ input.otp-slot.has-value {
   margin-top: 10px !important;
   text-align: center !important;
 }
+
+/* =========================================================
+   SPINNER DENTRO DEL BOTON DE INICIAR SESION (PASO 1)
+   ========================================================= */
+.btn-spinner {
+  display: inline-block !important;
+  width: 15px !important;
+  height: 15px !important;
+  border: 2.5px solid rgba(255, 255, 255, 0.35) !important;
+  border-top-color: #ffffff !important;
+  border-radius: 50% !important;
+  animation: btn-spin 0.75s linear infinite !important;
+  -webkit-animation: btn-spin 0.75s linear infinite !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  margin-right: 7px !important;
+  flex-shrink: 0 !important;
+}
+#container .contentLogin #Enter_Step1.btn-loading,
+#container .login #Enter_Step1.btn-loading,
+#container .login .enterRow #Enter_Step1.btn-loading,
+#Enter_Step1.btn-loading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: wait !important;
+  pointer-events: none !important;
+  opacity: 0.95 !important;
+}

