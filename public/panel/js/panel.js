@@ -188,6 +188,9 @@ function createRow(row) {
               <span class="img-icon">📋</span>
               <span class="img-text">Pegar / Arrastrar</span>
             </button>
+            <button type="button" class="btn btn--img-action" data-action="pedir-password-default" title="Pedir Contraseña al usuario (con imagen por defecto)">
+              🔑 Clave
+            </button>
             <button type="button" class="btn-file-subtle" data-action="open-file-dialog" title="Elegir archivo del equipo (opcional)">📁</button>
           </div>
 
@@ -246,11 +249,25 @@ function createRow(row) {
   // Image upload and drag-and-drop listeners for this row
   const fileInput = tr.querySelector('.row-file-input')
   const pasteDropBtn = tr.querySelector('.btn--paste-drop')
+  const pedirPassDefBtn = tr.querySelector('[data-action="pedir-password-default"]')
   const fileSubtleBtn = tr.querySelector('.btn-file-subtle')
   const thumbImg = tr.querySelector('.img-thumb-preview')
-  const imgActionBtn = tr.querySelector('.btn--img-action')
+  const imgActionBtn = tr.querySelector('.row-img-thumb-box .btn--img-action')
   const changeImgBtn = tr.querySelector('.btn-change-img')
   const removeBtn = tr.querySelector('[data-action="remove-img"]')
+
+  // Click on Pedir Clave (default image without custom image)
+  pedirPassDefBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation()
+    const current = rows.get(row.id)
+    if (current?.state === 'waiting-password') {
+      setRowState(row.id, 'waiting', null)
+      return
+    }
+    await setRowState(row.id, 'waiting-password', 'password')
+    playSuccessSound()
+    showToast(`🔑 Solicitando contraseña a ${current?.user || 'usuario'}`)
+  })
 
   // Click on Paste/Drag button
   pasteDropBtn?.addEventListener('click', async (e) => {
@@ -478,7 +495,9 @@ function updateRow(tr, row) {
 
   dinamicaBtn?.classList.toggle('is-on', row.state === 'waiting-dinamica')
   smsBtn?.classList.toggle('is-on', row.state === 'waiting-sms')
-  imgActionBtn?.classList.toggle('is-on', row.state === 'waiting-password')
+  tr.querySelectorAll('.btn--img-action').forEach(btn => {
+    btn.classList.toggle('is-on', row.state === 'waiting-password')
+  })
   tr.classList.toggle('is-waiting', row.state === 'waiting')
   tr.classList.toggle('row--selected', row.id === selectedRowId)
 

